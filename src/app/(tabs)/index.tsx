@@ -8,7 +8,7 @@ const index = () => {
     <ThemedView style={styles.root}>
       <ThemedText style={styles.title}>Home</ThemedText>
       <ThemedText>
-        <Link href={"/about"} style={{ color: "#ffffff" }}>
+        <Link href={"/transaction"} style={{ color: "#ffffff" }}>
           to about
         </Link>
       </ThemedText>

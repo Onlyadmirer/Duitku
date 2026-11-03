@@ -1,9 +1,22 @@
-import { View, Text, useColorScheme, StyleSheet } from "react-native";
-import { Tabs } from "expo-router";
-import { House, User } from "lucide-react-native";
+import {
+  View,
+  Text,
+  useColorScheme,
+  StyleSheet,
+  Pressable,
+} from "react-native";
+import { router, Tabs } from "expo-router";
+import {
+  House,
+  LayoutGridCircles,
+  Plus,
+  ReceiptText,
+  User,
+} from "lucide-react-native";
 import { Colors } from "@/constants/Colors";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { ChartPie } from "lucide-react-native/icons";
 
 const Layout = () => {
   const colorScheme = useColorScheme() ?? "light";
@@ -12,7 +25,13 @@ const Layout = () => {
   return (
     <>
       <StatusBar animated={true} />
-      <View style={{ backgroundColor: theme.tabBackground }}>
+      <View
+        style={{
+          backgroundColor: theme.tabBackground,
+          borderBottomColor: theme.border,
+          borderWidth: 0.4,
+        }}
+      >
         <SafeAreaView style={styles.topBar}>
           <Text style={styles.text}>Duitku</Text>
         </SafeAreaView>
@@ -23,8 +42,18 @@ const Layout = () => {
           tabBarInactiveTintColor: theme.tabInActive,
           tabBarStyle: {
             backgroundColor: theme.tabBackground,
-            height: 60,
-            paddingTop: 8,
+            position: "absolute",
+            bottom: 0,
+            height: 70,
+            paddingTop: 6,
+            borderColor: theme.border,
+            borderTopWidth: 1.2,
+            borderWidth: 1.2,
+            borderRadius: 16,
+            elevation: 0,
+          },
+          tabBarLabelStyle: {
+            fontSize: 9,
           },
           headerShown: false,
         }}
@@ -32,15 +61,65 @@ const Layout = () => {
         <Tabs.Screen
           name='index'
           options={{
-            title: "Home",
-            tabBarIcon: ({ color }) => <House color={color} />,
+            title: "Beranda",
+            tabBarIcon: ({ color }) => <House size={22} color={color} />,
           }}
         />
         <Tabs.Screen
-          name='about'
+          name='transaction'
           options={{
-            title: "About",
-            tabBarIcon: ({ color }) => <User color={color} />,
+            title: "transaction",
+            tabBarIcon: ({ color }) => <ReceiptText size={22} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name='addTransaction'
+          options={{
+            title: "",
+            tabBarButton: (props) => (
+              <Pressable
+                style={{
+                  top: -16,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+                onPress={() => router.push("/addTransaction")}
+              >
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
+                    backgroundColor: theme.primary,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    elevation: 5,
+                    shadowColor: theme.primary,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                  }}
+                >
+                  <Plus color='#FFFFFF' size={28} strokeWidth={2.5} />
+                </View>
+              </Pressable>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name='budget'
+          options={{
+            title: "Anggaran",
+            tabBarIcon: ({ color }) => <ChartPie size={22} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name='more'
+          options={{
+            title: "Lainnya",
+            tabBarIcon: ({ color }) => (
+              <LayoutGridCircles size={22} color={color} />
+            ),
           }}
         />
       </Tabs>

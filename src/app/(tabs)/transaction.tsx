@@ -6,10 +6,10 @@ import { Link } from "expo-router";
 import ThemedView from "@/components/ThemedView";
 import ThemedText from "@/components/ThemedText";
 
-const about = () => {
+const transaction = () => {
   return (
     <ThemedView style={styles.root}>
-      <ThemedText style={styles.title}>About</ThemedText>
+      <ThemedText style={styles.title}>transaction</ThemedText>
       <ThemedText>
         <Link href={"/"}>back to Home</Link>
       </ThemedText>
@@ -17,7 +17,7 @@ const about = () => {
   );
 };
 
-export default about;
+export default transaction;
 
 const styles = StyleSheet.create({
   root: {
