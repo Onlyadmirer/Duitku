@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "drizzle-orm": "^0.45.4",
     "expo": "~58.0.22",
     "expo-constants": "~58.0.14",
     "expo-linking": "~58.0.15",
     "expo-router": "~58.0.29",
+    "expo-sqlite": "~58.0.15",
     "expo-status-bar": "~58.0.4",
     "lucide-react-native": "^1.67.0",
     "react": "19.3.0",
@@ -17,6 +19,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
+    "babel-plugin-inline-import": "^3.0.0",
+    "drizzle-kit": "^0.31.11",
     "typescript": "~6.0.3"
   },
   "scripts": {
