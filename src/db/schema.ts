@@ -45,25 +45,18 @@ export const transactions = sqliteTable(
   "transactions",
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-
-    walletId: text("wallet_id")
+    walletId: integer("wallet_id")
       .notNull()
       .references(() => wallets.id),
-
-    categoryId: text("category_id")
+    categoryId: integer("category_id")
       .notNull()
       .references(() => categories.id),
-
     amount: integer("amount").notNull(),
-
     type: text("type", {
       enum: ["income", "expense"],
     }).notNull(),
-
     note: text("note"),
-
     date: text("date").notNull(),
-
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -75,6 +68,22 @@ export const transactions = sqliteTable(
   ],
 );
 
+// ==============================
+// App metadata
+// ==============================
+
+/**
+ * Menyimpan flag internal aplikasi (mis. seed kategori sudah dijalankan).
+ * Bukan pengganti tabel user/auth.
+ */
+export const appMeta = sqliteTable("app_meta", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 
 // ==============================
 // Budgets
@@ -85,7 +94,7 @@ export const budgets = sqliteTable(
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
 
-    categoryId: text("category_id")
+    categoryId: integer("category_id")
       .notNull()
       .references(() => categories.id, {
         onDelete: "cascade",

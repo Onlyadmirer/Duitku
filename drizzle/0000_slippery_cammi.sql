@@ -1,6 +1,12 @@
+CREATE TABLE `app_meta` (
+	`key` text PRIMARY KEY NOT NULL,
+	`value` text NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE `budgets` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`category_id` text NOT NULL,
+	`category_id` integer NOT NULL,
 	`month` text NOT NULL,
 	`limit_amount` integer NOT NULL,
 	`created_at` integer NOT NULL,
@@ -18,8 +24,8 @@ CREATE TABLE `categories` (
 --> statement-breakpoint
 CREATE TABLE `transactions` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`wallet_id` text NOT NULL,
-	`category_id` text NOT NULL,
+	`wallet_id` integer NOT NULL,
+	`category_id` integer NOT NULL,
 	`amount` integer NOT NULL,
 	`type` text NOT NULL,
 	`note` text,

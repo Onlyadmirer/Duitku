@@ -1,14 +1,248 @@
-import { StyleSheet, Text, View } from "react-native";
-import React from "react";
+import { useTransactions } from "@/services/transactions/hooks/useTransactions";
+import { addTransaction } from "@/services/transactions/transactions";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const addTransaction = () => {
-  return (
-    <View>
-      <Text>addTransaction</Text>
-    </View>
-  );
+export type addTransactionType = {
+  walletId: number;
+  categoryId: number;
+  amount: number;
+  type: "income" | "expense";
+  note?: string;
+  date: string;
 };
 
-export default addTransaction;
+export default function AddTransactionScreen() {
+  // Inisialisasi state sesuai dengan type yang diberikan
+  const [type, setType] = useState<"income" | "expense">("expense");
+  const [amount, setAmount] = useState<string>("");
+  const [walletId, setWalletId] = useState<number>(1); // Mock default ID
+  const [categoryId, setCategoryId] = useState<number>(1); // Mock default ID
+  const [date, setDate] = useState<string>(
+    new Date().toISOString().split("T")[0],
+  ); // YYYY-MM-DD
+  const [note, setNote] = useState<string>("");
 
-const styles = StyleSheet.create({});
+  const {
+    addTransaction,
+    error,
+    isAdding,
+    isError,
+    isLoading,
+    refetch,
+    transactions,
+  } = useTransactions();
+
+  const handleSave = async () => {
+    const newTransaction: addTransactionType = {
+      walletId,
+      categoryId,
+      amount: parseFloat(amount) || 0,
+      type,
+      note,
+      date,
+    };
+
+    console.log("Data Disimpan:", newTransaction);
+    // TODO: Panggil fungsi mutasi TanStack Query di sini
+
+    await addTransaction(newTransaction);
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Toggle Type (Income / Expense) */}
+        <View style={styles.toggleContainer}>
+          <TouchableOpacity
+            style={[
+              styles.toggleBtn,
+              type === "expense" && styles.expenseActive,
+            ]}
+            onPress={() => setType("expense")}
+          >
+            <Text
+              style={[
+                styles.toggleText,
+                type === "expense" && styles.activeText,
+              ]}
+            >
+              Pengeluaran
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, type === "income" && styles.incomeActive]}
+            onPress={() => setType("income")}
+          >
+            <Text
+              style={[
+                styles.toggleText,
+                type === "income" && styles.activeText,
+              ]}
+            >
+              Pemasukan
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Amount Input */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Jumlah (Rp)</Text>
+          <TextInput
+            style={styles.amountInput}
+            placeholder='0'
+            keyboardType='numeric'
+            value={amount}
+            onChangeText={setAmount}
+          />
+        </View>
+
+        {/* Date Input */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Tanggal (YYYY-MM-DD)</Text>
+          <TextInput
+            style={styles.input}
+            value={date}
+            onChangeText={setDate}
+            placeholder='2026-11-04'
+          />
+        </View>
+
+        {/* Wallet & Category Mocks (Biasanya menggunakan Picker/Dropdown) */}
+        <View style={styles.rowGroup}>
+          <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+            <Text style={styles.label}>Dompet (ID)</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType='numeric'
+              value={walletId.toString()}
+              onChangeText={(val) => setWalletId(parseInt(val) || 0)}
+            />
+          </View>
+          <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+            <Text style={styles.label}>Kategori (ID)</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType='numeric'
+              value={categoryId.toString()}
+              onChangeText={(val) => setCategoryId(parseInt(val) || 0)}
+            />
+          </View>
+        </View>
+
+        {/* Note Input */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Catatan (Opsional)</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder='Makan siang, bensin, dll...'
+            multiline
+            numberOfLines={3}
+            value={note}
+            onChangeText={setNote}
+          />
+        </View>
+
+        {/* Submit Button */}
+        <TouchableOpacity style={styles.submitButton} onPress={handleSave}>
+          <Text style={styles.submitButtonText}>Simpan Transaksi</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F8FAFC", // slate-50
+  },
+  container: {
+    padding: 20,
+  },
+  toggleContainer: {
+    flexDirection: "row",
+    backgroundColor: "#E2E8F0", // slate-200
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 24,
+  },
+  toggleBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  expenseActive: {
+    backgroundColor: "#EF4444", // red-500
+  },
+  incomeActive: {
+    backgroundColor: "#10B981", // emerald-500
+  },
+  toggleText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#64748B", // slate-500
+  },
+  activeText: {
+    color: "#FFFFFF",
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  rowGroup: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#334155", // slate-700
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#CBD5E1", // slate-300
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: "#0F172A", // slate-900
+  },
+  amountInput: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#0F172A",
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: "top", // Penting untuk Android agar teks mulai dari atas
+  },
+  submitButton: {
+    backgroundColor: "#4F46E5", // indigo-600
+    borderRadius: 10,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  submitButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+});
