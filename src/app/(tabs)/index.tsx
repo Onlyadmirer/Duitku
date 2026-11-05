@@ -11,6 +11,9 @@ const index = () => {
         <Link href={"/transaction"} style={{ color: "#ffffff" }}>
           to about
         </Link>
+        <Link href={"/addTransactionModal"} style={{ color: "#ffffff" }}>
+          to add transaction
+        </Link>
       </ThemedText>
     </ThemedView>
   );

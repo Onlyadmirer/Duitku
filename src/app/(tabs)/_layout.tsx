@@ -76,14 +76,14 @@ const Layout = () => {
           name='addTransaction'
           options={{
             title: "",
-            tabBarButton: (props) => (
+            tabBarButton: () => (
               <Pressable
                 style={{
                   top: -16,
                   justifyContent: "center",
                   alignItems: "center",
                 }}
-                onPress={() => router.push("/addTransaction")}
+                onPress={() => router.push("/addTransactionModal")}
               >
                 <View
                   style={{

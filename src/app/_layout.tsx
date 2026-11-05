@@ -34,6 +34,15 @@ const RootLayout = () => {
     <QueryClientProvider client={queryClient}>
       <Stack>
         <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+
+        <Stack.Screen
+          name='addTransactionModal'
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            headerShown: false,
+          }}
+        />
       </Stack>
     </QueryClientProvider>
   );
