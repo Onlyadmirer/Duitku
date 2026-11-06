@@ -13,7 +13,7 @@ export const transactionKeys = {
     [...transactionKeys.details(), id] as const,
 };
 
-const queryClient = useQueryClient()
+
 
 export function useTransactions(params: listTransactionType) {
   return useQuery({
@@ -30,6 +30,7 @@ export function useTransaction(id: number) {
 }
 
 export function useAddTransaction() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: addTransactionType) => addTransaction(data),
     onSuccess: () => {
@@ -41,6 +42,7 @@ export function useAddTransaction() {
 }
 
 export function useUpdateTransaction() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: updateTransactionType }) => transactionUpdate(id, data),
     onSuccess: () => {
@@ -52,6 +54,7 @@ export function useUpdateTransaction() {
 }
 
 export function useRemoveTransaction() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => removeTransaction(id),
     onSuccess: () => {
