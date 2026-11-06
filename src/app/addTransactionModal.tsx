@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Pressable,
   Platform,
+  ScrollView,
 } from "react-native";
 import DateTimePicker, {
   DateTimePickerChangeEvent,
@@ -16,6 +17,10 @@ import DateTimePicker, {
 import { router } from "expo-router";
 import ThemedView from "@/components/ThemedView";
 import { useAddTransaction } from "@/services/transactions/hooks/useTransactions";
+import { useCategories } from "@/services/categories/hooks/useCategories";
+import { Dropdown } from "react-native-element-dropdown";
+import { useWallets } from "@/services/wallets/hooks/useWallets";
+import { formatRupiah } from "@/lib/formatterRupiah";
 
 export type addTransactionType = {
   walletId: number;
@@ -25,8 +30,6 @@ export type addTransactionType = {
   note?: string;
   date: string;
 };
-
-export type amountType = {};
 
 export default function AddTransactionModal() {
   // Inisialisasi state sesuai dengan type yang diberikan
@@ -38,6 +41,10 @@ export default function AddTransactionModal() {
 
   const [date, setDate] = useState<Date>(new Date());
   const [showPicker, setShowPicker] = useState(false);
+
+  const handleChangeNominal = (value: string) => {
+    setAmount(formatRupiah(value));
+  };
 
   const handleDateChange = (
     event: DateTimePickerChangeEvent,
@@ -63,9 +70,14 @@ export default function AddTransactionModal() {
     year: "numeric",
   });
 
+  const { data: categories = [] } = useCategories(type);
+  const { data: wallets = [] } = useWallets();
+
   const { mutateAsync, isError, isPending } = useAddTransaction();
 
   const handleSave = async () => {
+    setAmount("0");
+    setNote("");
     const newTransaction: addTransactionType = {
       walletId,
       categoryId,
@@ -83,133 +95,156 @@ export default function AddTransactionModal() {
 
   return (
     <ThemedView style={styles.safeArea}>
-      {/* Header Modal */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <ThemedText style={{ fontSize: 20, fontWeight: "bold" }}>
-          Tambah Transaksi
-        </ThemedText>
-
-        {/* Tombol Close */}
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <X color='#A1A1AA' size={24} />
-        </Pressable>
-      </View>
-      {/* Toggle Type (Income / Expense) */}
-      <View style={styles.toggleContainer}>
-        <TouchableOpacity
-          style={[styles.toggleBtn, type === "expense" && styles.expenseActive]}
-          onPress={() => setType("expense")}
-        >
-          <Text
-            style={[styles.toggleText, type === "expense" && styles.activeText]}
-          >
-            Pengeluaran
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.toggleBtn, type === "income" && styles.incomeActive]}
-          onPress={() => setType("income")}
-        >
-          <Text
-            style={[styles.toggleText, type === "income" && styles.activeText]}
-          >
-            Pemasukan
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Amount Input */}
-      <View style={styles.inputGroup}>
-        <ThemedText style={styles.label}>Jumlah (Rp)</ThemedText>
-        <TextInput
-          style={styles.amountInput}
-          placeholder='0'
-          keyboardType='numeric'
-          value={amount}
-          onChangeText={setAmount}
-        />
-      </View>
-
-      {/* Date Input */}
-      <View style={{ marginVertical: 12 }}>
-        <ThemedText style={styles.label}>Tanggal</ThemedText>
-        <Pressable
-          onPress={() => setShowPicker(true)}
+      <ScrollView style={{ paddingHorizontal: 20 }}>
+        <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 10,
-            padding: 14,
-            borderRadius: 12,
-            backgroundColor: "#919191",
-            borderWidth: 1,
-            borderColor: "#27272A",
+            width: 40,
+            height: 5,
+            borderRadius: 999,
+            backgroundColor: "#71717A",
+            alignSelf: "center",
+            marginBottom: 16,
           }}
-        >
-          <Calendar size={20} />
-          <ThemedText>{formattedDate}</ThemedText>
-        </Pressable>
-
-        {showPicker && (
-          <DateTimePicker
-            value={date}
-            mode='date'
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onValueChange={handleDateChange}
-            onDismiss={handleOnDismiss}
-            maximumDate={new Date()}
-          ></DateTimePicker>
-        )}
-      </View>
-
-      {/* Wallet & Category Mocks (Biasanya menggunakan Picker/Dropdown) */}
-      <View style={styles.rowGroup}>
-        <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-          <ThemedText style={styles.label}>Dompet (ID)</ThemedText>
-          <TextInput
-            style={styles.input}
-            keyboardType='numeric'
-            value={walletId.toString()}
-            onChangeText={(val) => setWalletId(parseInt(val) || 0)}
-          />
-        </View>
-        <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-          <ThemedText style={styles.label}>Kategori (ID)</ThemedText>
-          <TextInput
-            style={styles.input}
-            keyboardType='numeric'
-            value={categoryId.toString()}
-            onChangeText={(val) => setCategoryId(parseInt(val) || 0)}
-          />
-        </View>
-      </View>
-
-      {/* Note Input */}
-      <View style={styles.inputGroup}>
-        <ThemedText style={styles.label}>Catatan (Opsional)</ThemedText>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder='Makan siang, bensin, dll...'
-          multiline
-          numberOfLines={3}
-          value={note}
-          onChangeText={setNote}
         />
-      </View>
+        {/* Toggle Type (Income / Expense) */}
+        <View style={styles.toggleContainer}>
+          <TouchableOpacity
+            style={[
+              styles.toggleBtn,
+              type === "expense" && styles.expenseActive,
+            ]}
+            onPress={() => setType("expense")}
+          >
+            <Text
+              style={[
+                styles.toggleText,
+                type === "expense" && styles.activeText,
+              ]}
+            >
+              Pengeluaran
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, type === "income" && styles.incomeActive]}
+            onPress={() => setType("income")}
+          >
+            <Text
+              style={[
+                styles.toggleText,
+                type === "income" && styles.activeText,
+              ]}
+            >
+              Pemasukan
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Submit Button */}
-      <TouchableOpacity style={styles.submitButton} onPress={handleSave}>
-        <ThemedText style={styles.submitButtonText}>
-          Simpan Transaksi
-        </ThemedText>
-      </TouchableOpacity>
+        {/* Amount Input */}
+        <View style={styles.inputGroup}>
+          <ThemedText style={styles.label}>Nominal</ThemedText>
+          <TextInput
+            style={styles.amountInput}
+            placeholder='0'
+            keyboardType='numeric'
+            value={amount}
+            onChangeText={handleChangeNominal}
+          />
+        </View>
+
+        {/* Date Input */}
+        <View style={{ marginVertical: 12 }}>
+          <ThemedText style={styles.label}>Tanggal</ThemedText>
+          <Pressable
+            onPress={() => setShowPicker(true)}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              padding: 14,
+              borderRadius: 12,
+              backgroundColor: "#919191",
+              borderWidth: 1,
+              borderColor: "#27272A",
+            }}
+          >
+            <Calendar size={20} />
+            <ThemedText>{formattedDate}</ThemedText>
+          </Pressable>
+
+          {showPicker && (
+            <DateTimePicker
+              value={date}
+              mode='date'
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onValueChange={handleDateChange}
+              onDismiss={handleOnDismiss}
+              maximumDate={new Date()}
+            ></DateTimePicker>
+          )}
+        </View>
+
+        {/* Wallet & Category Mocks (Biasanya menggunakan Picker/Dropdown) */}
+        <View style={styles.rowGroup}>
+          <View style={{ marginRight: 8 }}>
+            <ThemedText style={styles.label}>Dompet</ThemedText>
+            <Dropdown
+              data={wallets.map((wallet) => ({
+                label: wallet.name,
+                value: wallet.id,
+              }))}
+              style={styles.input}
+              containerStyle={{
+                borderRadius: 12,
+              }}
+              labelField='label'
+              valueField='value'
+              maxHeight={300}
+              placeholder='Pilih kategori'
+              value={walletId}
+              onChange={(item) => setWalletId(item.value)}
+            />
+          </View>
+          <View style={{ marginRight: 8 }}>
+            <ThemedText style={styles.label}>Kategori</ThemedText>
+            <Dropdown
+              data={categories.map((category) => ({
+                label: category.name,
+                value: category.id,
+              }))}
+              containerStyle={{
+                borderRadius: 12,
+              }}
+              style={styles.input}
+              labelField='label'
+              valueField='value'
+              placeholder='Pilih kategori'
+              dropdownPosition='auto'
+              value={categoryId}
+              onChange={(item) => setCategoryId(item.value)}
+            />
+          </View>
+        </View>
+
+        {/* Note Input */}
+        <View style={styles.inputGroup}>
+          <ThemedText style={styles.label}>Catatan (Opsional)</ThemedText>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder='Makan siang, bensin, dll...'
+            multiline
+            numberOfLines={3}
+            value={note}
+            onChangeText={setNote}
+          />
+        </View>
+
+        {/* Submit Button */}
+        <TouchableOpacity style={styles.submitButton} onPress={handleSave}>
+          <ThemedText style={styles.submitButtonText}>
+            Simpan Transaksi
+          </ThemedText>
+        </TouchableOpacity>
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -217,10 +252,17 @@ export default function AddTransactionModal() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    padding: 20,
   },
   container: {
     padding: 20,
+  },
+  dropdown: {
+    height: 50,
+    borderColor: "gray",
+    borderWidth: 0.5,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    backgroundColor: "#FFFFFF",
   },
   toggleContainer: {
     flexDirection: "row",
@@ -253,8 +295,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   rowGroup: {
-    flexDirection: "row",
+    flex: 1,
+    flexDirection: "column",
     justifyContent: "space-between",
+    marginBottom: 8,
   },
   label: {
     fontSize: 14,

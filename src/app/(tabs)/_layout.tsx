@@ -4,6 +4,7 @@ import {
   useColorScheme,
   StyleSheet,
   Pressable,
+  TouchableOpacity,
 } from "react-native";
 import { router, Tabs } from "expo-router";
 import {
@@ -24,7 +25,7 @@ const Layout = () => {
 
   return (
     <>
-      <StatusBar animated={true} />
+      <StatusBar animated={true} style='auto' />
       <View
         style={{
           backgroundColor: theme.tabBackground,
@@ -52,6 +53,7 @@ const Layout = () => {
             borderRadius: 16,
             elevation: 0,
           },
+          animation: "fade",
           tabBarLabelStyle: {
             fontSize: 9,
           },
@@ -77,7 +79,7 @@ const Layout = () => {
           options={{
             title: "",
             tabBarButton: () => (
-              <Pressable
+              <TouchableOpacity
                 style={{
                   top: -16,
                   justifyContent: "center",
@@ -102,7 +104,7 @@ const Layout = () => {
                 >
                   <Plus color='#FFFFFF' size={28} strokeWidth={2.5} />
                 </View>
-              </Pressable>
+              </TouchableOpacity>
             ),
           }}
         />
