@@ -1,33 +1,63 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { addTransaction, fetchTransactions } from "../transactions"
-import { addTransactionType } from "../type"
+import { addTransaction, fetchTransactions, getOneTransaction, removeTransaction, transactionUpdate } from "../transactions"
+import { addTransactionType, listTransactionType, updateTransactionType } from "../type"
 
 
-export const QUERY_KEY_TRANSACTION = ['transactions']
+export const transactionKeys = {
+  all: ["transactions"] as const,
+  lists: () => [...transactionKeys.all, "list"] as const,
+  list: (params: listTransactionType) =>
+    [...transactionKeys.lists(), params] as const,
+  details: () => [...transactionKeys.all, "detail"] as const,
+  detail: (id: number) =>
+    [...transactionKeys.details(), id] as const,
+};
 
-export function useTransactions() {
-  const queryClient = useQueryClient()
+const queryClient = useQueryClient()
 
-  const transactionsQuery = useQuery({
-    queryKey: QUERY_KEY_TRANSACTION,
-    queryFn: fetchTransactions
+export function useTransactions(params: listTransactionType) {
+  return useQuery({
+    queryKey: transactionKeys.list(params),
+    queryFn: () => fetchTransactions(params),
+  });
+}
+
+export function useTransaction(id: number) {
+  return useQuery({
+    queryKey: transactionKeys.detail(id),
+    queryFn: () => getOneTransaction(id)
   })
+}
 
-  const addMutation = useMutation({
-    mutationFn: (newTx: addTransactionType) => addTransaction(newTx),
+export function useAddTransaction() {
+  return useMutation({
+    mutationFn: (data: addTransactionType) => addTransaction(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEY_TRANSACTION })
+      queryClient.invalidateQueries({
+        queryKey: transactionKeys.all
+      })
     }
   })
+}
 
+export function useUpdateTransaction() {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: updateTransactionType }) => transactionUpdate(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: transactionKeys.all
+      })
+    }
+  })
+}
 
-  return {
-    transactions: transactionsQuery.data ?? [],
-    isLoading: transactionsQuery.isLoading,
-    isError: transactionsQuery.isError,
-    error: transactionsQuery.error,
-    addTransaction: addMutation.mutateAsync,
-    isAdding: addMutation.isPending,
-    refetch: transactionsQuery.refetch,
-  };
+export function useRemoveTransaction() {
+  return useMutation({
+    mutationFn: (id: number) => removeTransaction(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: transactionKeys.all
+      })
+    }
+  })
 }

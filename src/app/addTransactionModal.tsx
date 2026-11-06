@@ -1,25 +1,21 @@
 import ThemedText from "@/components/ThemedText";
-import { useTransactions } from "@/services/transactions/hooks/useTransactions";
-import { addTransaction } from "@/services/transactions/transactions";
 import { Calendar, X } from "lucide-react-native";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   Pressable,
   Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker, {
   DateTimePickerChangeEvent,
-  DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import ThemedView from "@/components/ThemedView";
+import { useAddTransaction } from "@/services/transactions/hooks/useTransactions";
 
 export type addTransactionType = {
   walletId: number;
@@ -67,15 +63,7 @@ export default function AddTransactionModal() {
     year: "numeric",
   });
 
-  const {
-    addTransaction,
-    error,
-    isAdding,
-    isError,
-    isLoading,
-    refetch,
-    transactions,
-  } = useTransactions();
+  const { mutateAsync, isError, isPending } = useAddTransaction();
 
   const handleSave = async () => {
     const newTransaction: addTransactionType = {
@@ -90,7 +78,7 @@ export default function AddTransactionModal() {
     console.log("Data Disimpan:", newTransaction);
     // TODO: Panggil fungsi mutasi TanStack Query di sini
 
-    await addTransaction(newTransaction);
+    await mutateAsync(newTransaction);
   };
 
   return (
