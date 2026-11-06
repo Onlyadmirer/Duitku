@@ -3,5 +3,10 @@ export type inputCategoryType = {
   type: "income" | "expense"
   color: string
 }
+export type updateCategoryType = {
+  name?: string
+  type?: "income" | "expense"
+  color?: string
+}
 
 export type categoryType = "income" | "expense"

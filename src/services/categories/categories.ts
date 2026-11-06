@@ -1,6 +1,6 @@
 import { db } from "@/db/client"
 import { categories } from "@/db/schema"
-import { categoryType, inputCategoryType } from "./type"
+import { categoryType, inputCategoryType, updateCategoryType } from "./type"
 import { eq } from "drizzle-orm"
 
 export const addCategory = async (data: inputCategoryType) => {
@@ -18,6 +18,10 @@ export const getOneCategory = async (id: number) => {
   const [category] = await db.select().from(categories).where(eq(categories.id, id))
 
   return category
+}
+
+export const updateCategory = async (id: number, data: updateCategoryType) => {
+  return await db.update(categories).set(data).where(eq(categories.id, id))
 }
 
 export const removeCategory = async (id: number) => {
