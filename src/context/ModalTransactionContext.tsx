@@ -2,12 +2,24 @@ import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/constants/useTheme";
 import { formatRupiah, parseRupiah } from "@/lib/formatterRupiah";
 import { useCategories } from "@/services/categories/hooks/useCategories";
-import { useAddTransaction } from "@/services/transactions/hooks/useTransactions";
+import {
+  useAddTransaction,
+  useUpdateTransaction,
+} from "@/services/transactions/hooks/useTransactions";
 import { useWallets } from "@/services/wallets/hooks/useWallets";
 import { DateTimePickerChangeEvent } from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { Platform } from "react-native";
+import TransactionSuccessModal, {
+  SavedTransactionSuccessInfo,
+} from "@/components/addTransaction/TransactionSuccessModal";
 
 export type addTransactionType = {
   walletId: number;
@@ -18,10 +30,21 @@ export type addTransactionType = {
   date: string;
 };
 
+export interface EditableTransactionPayload {
+  id: number;
+  walletId: number;
+  categoryId: number;
+  amount: number;
+  type: "income" | "expense";
+  note?: string | null;
+  date: string;
+}
+
 export type ThemeColors = (typeof Colors)[keyof typeof Colors];
 
 interface TransactionContextType {
   theme: ThemeColors;
+  editingId: number | null;
   type: "expense" | "income";
   walletId: number;
   setWalletId: (id: number) => void;
@@ -58,9 +81,13 @@ interface TransactionContextType {
   ) => void;
   handleOnDismiss: () => void;
   handleSave: () => void;
+  isSaving: boolean;
   selectedAmount: number | null;
   setSelectedAmount: (val: number | null) => void;
   handlePress: (val: number) => void;
+  openAddModal: () => void;
+  openEditModal: (tx: EditableTransactionPayload) => void;
+  resetForm: () => void;
 }
 
 const TransactionContext = createContext<TransactionContextType | null>(null);
@@ -72,6 +99,7 @@ export function ModalTransactionProvider({
 }) {
   const { theme, isDark } = useTheme();
 
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [type, setType] = useState<"income" | "expense">("expense");
   const [amount, setAmount] = useState<string>("");
   const [walletId, setWalletId] = useState<number>(1);
@@ -82,6 +110,8 @@ export function ModalTransactionProvider({
   const [showPicker, setShowPicker] = useState(false);
 
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [successInfo, setSuccessInfo] =
+    useState<SavedTransactionSuccessInfo | null>(null);
 
   // fetch categories & wallets
   const { data: categories = [] } = useCategories(type);
@@ -101,6 +131,33 @@ export function ModalTransactionProvider({
       setWalletId(wallets[0].id);
     }
   }, [wallets, walletId]);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setType("expense");
+    setAmount("");
+    setNote("");
+    setDate(new Date());
+    setSelectedAmount(null);
+  };
+
+  const openAddModal = () => {
+    resetForm();
+    router.push("/addTransactionModal");
+  };
+
+  const openEditModal = (tx: EditableTransactionPayload) => {
+    setEditingId(tx.id);
+    setType(tx.type);
+    setWalletId(tx.walletId);
+    setCategoryId(tx.categoryId);
+    setAmount(formatRupiah(String(tx.amount)));
+    setNote(tx.note ?? "");
+    const parsedDate = new Date(tx.date);
+    setDate(Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate);
+    setSelectedAmount(null);
+    router.push("/addTransactionModal");
+  };
 
   // amount
   const handleChangeNominal = (value: string) => {
@@ -127,23 +184,23 @@ export function ModalTransactionProvider({
   };
 
   // date picker
-  const handleDateChange = (
-    event: DateTimePickerChangeEvent,
-    selectedDate: Date
-  ) => {
-    if (Platform.OS === "android") {
-      setShowPicker(false);
-    }
-    if (selectedDate) {
-      setDate(selectedDate);
-    }
-  };
+  const handleDateChange = useCallback(
+    (event: DateTimePickerChangeEvent, selectedDate: Date) => {
+      if (Platform.OS === "android") {
+        setShowPicker(false);
+      }
+      if (selectedDate) {
+        setDate(selectedDate);
+      }
+    },
+    []
+  );
 
-  const handleOnDismiss = () => {
+  const handleOnDismiss = useCallback(() => {
     if (Platform.OS === "android") {
       setShowPicker(false);
     }
-  };
+  }, []);
 
   // tampilan selected date
   const formattedDate = date.toLocaleDateString("id-ID", {
@@ -152,37 +209,73 @@ export function ModalTransactionProvider({
     year: "numeric",
   });
 
-  // fetch /addTransaction
-  const { mutateAsync } = useAddTransaction();
+  // mutations
+  const { mutateAsync: addTxAsync, isPending: isAdding } = useAddTransaction();
+  const { mutateAsync: updateTxAsync, isPending: isUpdating } =
+    useUpdateTransaction();
+  const isSaving = isAdding || isUpdating;
 
-  // send tx
+  // send tx (create or update)
   const handleSave = async () => {
+    if (isSaving) return;
     const parsedAmount = parseRupiah(amount);
     if (!parsedAmount || parsedAmount <= 0) return;
 
-    const newTransaction: addTransactionType = {
-      walletId,
-      categoryId,
-      amount: parsedAmount,
+    const selectedCategoryName =
+      categories.find((c) => c.id === categoryId)?.name ?? "Lainnya";
+    const selectedWalletName =
+      wallets.find((w) => w.id === walletId)?.name ?? "Dompet";
+    const wasEditing = editingId !== null;
+
+    if (wasEditing) {
+      await updateTxAsync({
+        id: editingId,
+        data: {
+          walletId,
+          categoryId,
+          amount: parsedAmount,
+          type,
+          note,
+          date: date.toISOString(),
+        },
+      });
+    } else {
+      const newTransaction: addTransactionType = {
+        walletId,
+        categoryId,
+        amount: parsedAmount,
+        type,
+        note,
+        date: date.toISOString(),
+      };
+      await addTxAsync(newTransaction);
+    }
+
+    const savedSummary: SavedTransactionSuccessInfo = {
+      isEditing: wasEditing,
       type,
+      amount: parsedAmount,
+      categoryName: selectedCategoryName,
+      walletName: selectedWalletName,
+      dateLabel: formattedDate,
       note,
-      date: date.toISOString(),
     };
 
-    await mutateAsync(newTransaction);
-
-    setAmount("");
-    setNote("");
-    setSelectedAmount(null);
+    resetForm();
 
     if (router.canGoBack()) {
       router.back();
     }
+
+    setTimeout(() => {
+      setSuccessInfo(savedSummary);
+    }, 180);
   };
 
   return (
     <TransactionContext.Provider
       value={{
+        editingId,
         type,
         setType,
         theme,
@@ -206,12 +299,28 @@ export function ModalTransactionProvider({
         wallets,
         isDark,
         handleSave,
+        isSaving,
         selectedAmount,
         setSelectedAmount,
         handlePress,
+        openAddModal,
+        openEditModal,
+        resetForm,
       }}
     >
       {children}
+
+      <TransactionSuccessModal
+        visible={successInfo !== null}
+        info={successInfo}
+        onClose={() => setSuccessInfo(null)}
+        onAddAnother={() => {
+          setSuccessInfo(null);
+          setTimeout(() => {
+            openAddModal();
+          }, 150);
+        }}
+      />
     </TransactionContext.Provider>
   );
 }

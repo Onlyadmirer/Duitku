@@ -11,8 +11,17 @@ import { Dropdown } from "react-native-element-dropdown";
 import { useModalTransactionContext } from "@/context/ModalTransactionContext";
 import { Calendar } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import {
+  TRANSFER_IN_CATEGORY_NAME,
+  TRANSFER_OUT_CATEGORY_NAME,
+} from "@/services/wallets/wallets";
 
-const FormInput = () => {
+interface FormInputProps {
+  onFocusNote?: () => void;
+  onBlurNote?: () => void;
+}
+
+const FormInput = ({ onFocusNote, onBlurNote }: FormInputProps) => {
   const {
     theme,
     wallets,
@@ -80,7 +89,7 @@ const FormInput = () => {
           labelField='label'
           valueField='value'
           maxHeight={300}
-          placeholder='Pilih kategori'
+          placeholder='Pilih dompet'
           value={walletId}
           onChange={(item) => setWalletId(item.value)}
         />
@@ -90,10 +99,17 @@ const FormInput = () => {
           Pilih Kategori
         </Text>
         <Dropdown
-          data={categories.map((category) => ({
-            label: category.name,
-            value: category.id,
-          }))}
+          data={categories
+            .filter(
+              (c) =>
+                c.id === categoryId ||
+                (c.name !== TRANSFER_IN_CATEGORY_NAME &&
+                  c.name !== TRANSFER_OUT_CATEGORY_NAME)
+            )
+            .map((category) => ({
+              label: category.name,
+              value: category.id,
+            }))}
           placeholderStyle={{
             color: theme.text,
           }}
@@ -175,12 +191,14 @@ const FormInput = () => {
               borderColor: theme.border,
             },
           ]}
-          placeholderTextColor={theme.text}
+          placeholderTextColor={theme.textMuted}
           placeholder='Makan siang, bensin, dll...'
           multiline
           numberOfLines={3}
           value={note}
           onChangeText={setNote}
+          onFocus={onFocusNote}
+          onBlur={onBlurNote}
         />
       </View>
     </View>
@@ -191,11 +209,10 @@ export default FormInput;
 
 const styles = StyleSheet.create({
   rowGroup: {
-    flex: 1,
     flexDirection: "column",
     justifyContent: "space-between",
     marginBottom: 8,
-    gap: 20,
+    gap: 16,
     borderWidth: 1,
     padding: 20,
     borderRadius: 20,
@@ -213,11 +230,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   textArea: {
-    flex: 1,
-    height: 100,
+    height: 90,
     width: "100%",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    textAlignVertical: "top", // Penting untuk Android agar teks mulai dari atas
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    textAlignVertical: "top",
   },
 });

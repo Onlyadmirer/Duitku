@@ -6,7 +6,6 @@ import {
   View,
 } from "react-native";
 import { useModalTransactionContext } from "@/context/ModalTransactionContext";
-import { useState } from "react";
 
 export const QUICK_AMOUNTS = [
   { label: "25rb", value: 25000 },
@@ -114,7 +113,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     padding: 10,
     fontWeight: "bold",
-    maxWidth: 200,
+    minWidth: 90,
+    maxWidth: 280,
+    textAlign: "center",
   },
 
   quickAmount: {
