@@ -15,7 +15,7 @@ interface HomeHeaderProps {
 }
 
 const HomeHeader = ({
-  userName = "akmal",
+  userName = "There",
   income = 0,
   expense = 0,
   selectedMonthShort,
@@ -34,19 +34,16 @@ const HomeHeader = ({
     <View style={styles.container}>
       <View style={styles.topRow}>
         <View style={styles.greetingCol}>
-          <Text style={[styles.greetingText, { color: theme.text }]}>
-            Halo, {userName} ✨
-          </Text>
           {isExpenseGreater ? (
             <Text style={[styles.subtitleText, { color: theme.textMuted }]}>
-              Pengeluaran lebih besar{" "}
+              Pengeluaran lebih besar{" \n"}
               <Text style={styles.highlightDanger}>{diffFormatted}</Text> bulan
               ini
             </Text>
           ) : isIncomeGreater ? (
             <Text style={[styles.subtitleText, { color: theme.textMuted }]}>
               Pemasukan lebih besar{" "}
-              <Text style={{ color: theme.primary, fontWeight: "700" }}>
+              <Text style={{ color: theme.primaryText, fontWeight: "700" }}>
                 {diffFormatted}
               </Text>{" "}
               bulan ini
@@ -69,14 +66,12 @@ const HomeHeader = ({
             },
           ]}
         >
-          <View style={styles.monthTextWrap}>
-            <Text style={[styles.monthSelectorText, { color: theme.text }]}>
-              {selectedMonthShort}
-            </Text>
-            <Text style={[styles.monthSelectorText, { color: theme.text }]}>
-              {selectedYear}
-            </Text>
-          </View>
+          <Text
+            style={[styles.monthSelectorText, { color: theme.text }]}
+            numberOfLines={1}
+          >
+            {selectedMonthShort} {selectedYear}
+          </Text>
           <ChevronDown size={14} color={theme.textMuted} />
         </TouchableOpacity>
       </View>
@@ -90,8 +85,13 @@ const HomeHeader = ({
           },
         ]}
       >
-        <View style={styles.calendarIconWrap}>
-          <Calendar size={12} color={theme.primary} />
+        <View
+          style={[
+            styles.calendarIconWrap,
+            { backgroundColor: theme.primarySoftBg },
+          ]}
+        >
+          <Calendar size={12} color={theme.primaryText} />
         </View>
         <Text style={[styles.summaryBadgeText, { color: theme.textMuted }]}>
           Menampilkan ringkasan{" "}
@@ -136,19 +136,15 @@ const styles = StyleSheet.create({
   monthSelector: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
   },
-  monthTextWrap: {
-    alignItems: "center",
-  },
   monthSelectorText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "700",
-    lineHeight: 14,
   },
   summaryBadge: {
     alignSelf: "flex-start",

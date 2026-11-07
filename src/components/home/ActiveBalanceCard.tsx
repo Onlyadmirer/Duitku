@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import {
   Banknote,
   Eye,
@@ -38,19 +44,19 @@ const ActiveBalanceCard = ({
   const renderWalletIcon = (type: WalletSummaryItem["type"]) => {
     switch (type) {
       case "cash":
-        return <Banknote size={12} color="#374151" />;
+        return <Banknote size={12} color='#374151' />;
       case "bank":
-        return <Landmark size={12} color="#374151" />;
+        return <Landmark size={12} color='#374151' />;
       case "ewallet":
-        return <Smartphone size={12} color="#374151" />;
+        return <Smartphone size={12} color='#374151' />;
     }
   };
 
   return (
     <View style={[styles.card, { backgroundColor: theme.primary }]}>
       {/* Decorative Wallet Watermark */}
-      <View style={styles.watermarkWrap} pointerEvents="none">
-        <Wallet size={120} color="#000000" strokeWidth={1.5} />
+      <View style={styles.watermarkWrap} pointerEvents='none'>
+        <Wallet size={120} color='#000000' strokeWidth={1.5} />
       </View>
 
       {/* Top Row */}
@@ -66,9 +72,9 @@ const ActiveBalanceCard = ({
           style={styles.eyeButton}
         >
           {isHidden ? (
-            <EyeOff size={16} color="#1A2E05" />
+            <EyeOff size={16} color='#1A2E05' />
           ) : (
-            <Eye size={16} color="#1A2E05" />
+            <Eye size={16} color='#1A2E05' />
           )}
         </TouchableOpacity>
       </View>
@@ -79,21 +85,33 @@ const ActiveBalanceCard = ({
       </Text>
 
       {/* Wallet Mini Cards */}
-      <View style={styles.walletsRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.walletsRow}
+      >
         {wallets.map((wallet) => (
           <View key={wallet.id} style={styles.walletMiniCard}>
             <View style={styles.walletHeader}>
               {renderWalletIcon(wallet.type)}
-              <Text style={styles.walletName} numberOfLines={1}>
+              <Text
+                style={styles.walletName}
+                numberOfLines={1}
+                ellipsizeMode='tail'
+              >
                 {wallet.name}
               </Text>
             </View>
-            <Text style={styles.walletBalance} numberOfLines={1}>
+            <Text
+              style={styles.walletBalance}
+              numberOfLines={1}
+              ellipsizeMode='tail'
+            >
               {isHidden ? "Rp •••" : wallet.balanceLabel}
             </Text>
           </View>
         ))}
-      </View>
+      </ScrollView>
     </View>
   );
 };
@@ -157,7 +175,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   walletMiniCard: {
-    flex: 1,
+    width: 105,
+    overflow: "hidden",
     backgroundColor: "rgba(255, 255, 255, 0.88)",
     borderRadius: 14,
     paddingHorizontal: 10,
@@ -170,9 +189,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   walletName: {
+    flex: 1,
     fontSize: 11,
     fontWeight: "600",
     color: "#4B5563",
+    paddingRight: 6,
   },
   walletBalance: {
     fontSize: 14,

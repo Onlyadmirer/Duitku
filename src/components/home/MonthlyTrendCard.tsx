@@ -1,6 +1,13 @@
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useMemo } from "react";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { ArrowRight } from "lucide-react-native";
+import { BarChart, barDataItem } from "react-native-gifted-charts";
 import { useTheme } from "@/constants/useTheme";
 
 export interface MonthlyTrendItem {
@@ -32,8 +39,6 @@ const DEFAULT_TREND_DATA: MonthlyTrendItem[] = [
   { label: "Des", income: 0, expense: 0 },
 ];
 
-const MAX_BAR_HEIGHT = 68;
-
 const MonthlyTrendCard = ({
   periodLabel = "Jan 2026 - Des 2026",
   peakLabel = "Puncak: Nov (Rp 658k)",
@@ -41,12 +46,78 @@ const MonthlyTrendCard = ({
   onPressDetail,
 }: MonthlyTrendCardProps) => {
   const { theme, isDark } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
   const cardBg = isDark ? "#0F1523" : theme.card;
+  const inactiveBarColor = isDark ? "#1C2536" : "#E5E7EB";
+  const expenseActiveColor = isDark ? "#F87171" : "#F87171";
 
-  const maxValue = Math.max(
-    ...data.map((d) => Math.max(d.income, d.expense)),
-    1
-  );
+  const maxValue = useMemo(() => {
+    const rawMax = Math.max(
+      ...data.map((d) => Math.max(d.income, d.expense)),
+      0,
+    );
+    return rawMax > 0 ? rawMax * 1.15 : 100;
+  }, [data]);
+
+  const { barData, groupSpacing, chartWidth } = useMemo(() => {
+    const availableWidth = Math.max(screenWidth - 68, 260);
+    const barW = 5.5;
+    const pairGap = 2;
+    const perMonthBarsWidth = barW * 2 + pairGap;
+    const calculatedSpacing = Math.max(
+      Math.floor((availableWidth - perMonthBarsWidth * 12) / 12),
+      8,
+    );
+
+    const minStubIncome = maxValue * 0.08;
+    const minStubExpense = maxValue * 0.14;
+
+    const items: barDataItem[] = [];
+
+    data.forEach((item, index) => {
+      const hasIncome = item.income > 0;
+      const hasExpense = item.expense > 0;
+
+      items.push({
+        value: hasIncome
+          ? Math.max(item.income, maxValue * 0.12)
+          : minStubIncome,
+        label: item.label,
+        spacing: pairGap,
+        labelWidth: perMonthBarsWidth + calculatedSpacing - 2,
+        labelTextStyle: {
+          color: item.isActive ? theme.primaryText : theme.textMuted,
+          fontSize: 10,
+          fontWeight: item.isActive ? "800" : "500",
+          textAlign: "center",
+        },
+        frontColor: hasIncome ? theme.chartIncome : inactiveBarColor,
+      });
+
+      items.push({
+        value: hasExpense
+          ? Math.max(item.expense, maxValue * 0.12)
+          : minStubExpense,
+        spacing: index === data.length - 1 ? 0 : calculatedSpacing,
+        frontColor: hasExpense ? expenseActiveColor : inactiveBarColor,
+      });
+    });
+
+    return {
+      barData: items,
+      groupSpacing: calculatedSpacing,
+      chartWidth: availableWidth,
+    };
+  }, [
+    data,
+    screenWidth,
+    maxValue,
+    theme.primaryText,
+    theme.chartIncome,
+    theme.textMuted,
+    inactiveBarColor,
+    expenseActiveColor,
+  ]);
 
   return (
     <View
@@ -69,7 +140,7 @@ const MonthlyTrendCard = ({
         <View style={styles.legendRow}>
           <View style={styles.legendItem}>
             <View
-              style={[styles.legendDot, { backgroundColor: theme.primary }]}
+              style={[styles.legendDot, { backgroundColor: theme.chartIncome }]}
             />
             <Text style={[styles.legendText, { color: theme.textMuted }]}>
               Masuk
@@ -79,7 +150,7 @@ const MonthlyTrendCard = ({
             <View
               style={[
                 styles.legendDot,
-                { backgroundColor: isDark ? "#FFFFFF" : "#111111" },
+                { backgroundColor: expenseActiveColor },
               ]}
             />
             <Text style={[styles.legendText, { color: theme.textMuted }]}>
@@ -89,77 +160,29 @@ const MonthlyTrendCard = ({
         </View>
       </View>
 
-      {/* Chart Area */}
-      <View style={styles.chartContainer}>
-        {/* Dashed Mid Grid Line */}
-        <View
-          style={[
-            styles.dashedLine,
-            { borderColor: isDark ? "#1E293B" : "#E5E7EB" },
-          ]}
+      {/* Gifted Charts BarChart Area */}
+      <View style={styles.chartWrapper}>
+        <BarChart
+          data={barData}
+          width={chartWidth}
+          height={86}
+          barWidth={5.5}
+          barBorderRadius={3}
+          maxValue={maxValue}
+          noOfSections={2}
+          hideYAxisText
+          yAxisThickness={0}
+          xAxisThickness={0}
+          rulesType='dashed'
+          rulesColor={isDark ? "#1E293B" : "#E5E7EB"}
+          dashWidth={4}
+          dashGap={4}
+          initialSpacing={4}
+          endSpacing={4}
+          disableScroll
+          isAnimated
+          animationDuration={400}
         />
-
-        <View style={styles.barsRow}>
-          {data.map((item) => {
-            const hasIncome = item.income > 0;
-            const hasExpense = item.expense > 0;
-
-            const incomeHeight = hasIncome
-              ? Math.max((item.income / maxValue) * MAX_BAR_HEIGHT, 18)
-              : 8;
-            const expenseHeight = hasExpense
-              ? Math.max((item.expense / maxValue) * MAX_BAR_HEIGHT, 18)
-              : 13;
-
-            const inactiveBarColor = isDark ? "#1C2536" : "#E5E7EB";
-
-            return (
-              <View key={item.label} style={styles.monthColumn}>
-                <View style={styles.barPairWrap}>
-                  {/* Income Bar */}
-                  <View
-                    style={[
-                      styles.bar,
-                      {
-                        height: incomeHeight,
-                        backgroundColor: hasIncome
-                          ? theme.primary
-                          : inactiveBarColor,
-                      },
-                    ]}
-                  />
-                  {/* Expense Bar */}
-                  <View
-                    style={[
-                      styles.bar,
-                      {
-                        height: expenseHeight,
-                        backgroundColor: hasExpense
-                          ? isDark
-                            ? "#FFFFFF"
-                            : "#111111"
-                          : inactiveBarColor,
-                      },
-                      hasExpense && styles.activeExpenseBarGlow,
-                    ]}
-                  />
-                </View>
-
-                <Text
-                  style={[
-                    styles.monthLabel,
-                    {
-                      color: item.isActive ? theme.primary : theme.textMuted,
-                      fontWeight: item.isActive ? "800" : "500",
-                    },
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
       </View>
 
       {/* Footer */}
@@ -174,10 +197,10 @@ const MonthlyTrendCard = ({
           onPress={onPressDetail}
           style={styles.detailLinkBtn}
         >
-          <Text style={[styles.detailLinkText, { color: theme.primary }]}>
+          <Text style={[styles.detailLinkText, { color: theme.primaryText }]}>
             Lihat rincian data tren
           </Text>
-          <ArrowRight size={13} color={theme.primary} strokeWidth={2.5} />
+          <ArrowRight size={13} color={theme.primaryText} strokeWidth={2.5} />
         </TouchableOpacity>
 
         <Text style={[styles.peakText, { color: theme.textMuted }]}>
@@ -230,49 +253,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "500",
   },
-  chartContainer: {
-    marginTop: 22,
-    marginBottom: 14,
-    position: "relative",
-    justifyContent: "flex-end",
-  },
-  dashedLine: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 34,
-    borderBottomWidth: 1,
-    borderStyle: "dashed",
-  },
-  barsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-  },
-  monthColumn: {
+  chartWrapper: {
+    marginTop: 14,
+    marginBottom: 10,
     alignItems: "center",
-    flex: 1,
-  },
-  barPairWrap: {
-    height: MAX_BAR_HEIGHT,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 2,
-  },
-  bar: {
-    width: 5.5,
-    borderRadius: 3,
-  },
-  activeExpenseBarGlow: {
-    shadowColor: "#FFFFFF",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  monthLabel: {
-    fontSize: 10,
-    marginTop: 8,
+    overflow: "hidden",
   },
   footerRow: {
     flexDirection: "row",

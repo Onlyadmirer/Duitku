@@ -1,7 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
-  Modal,
-  Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,7 +8,9 @@ import {
   View,
 } from "react-native";
 import { router } from "expo-router";
+import { ArrowLeftRight, ChevronRight } from "lucide-react-native";
 import { useTheme } from "@/constants/useTheme";
+import { CardListSkeleton } from "@/components/ui/LoadingState";
 import HomeHeader from "@/components/home/HomeHeader";
 import ActiveBalanceCard, {
   WalletSummaryItem,
@@ -26,50 +27,25 @@ import RecentTransactionsSection, {
   RecentTransactionItem,
   resolveTransactionIcon,
 } from "@/components/home/RecentTransactionsSection";
-import SavingTipsBanner from "@/components/home/SavingTipsBanner";
+import MonthYearPickerModal, {
+  MONTHS_FULL,
+  MONTHS_SHORT,
+} from "@/components/ui/MonthYearPickerModal";
 import {
   useMonthlyTrends,
   useReportByCategory,
   useReportSummary,
   useWalletBalances,
 } from "@/services/reports/hooks/useReports";
+import { useTransferWallet } from "@/services/wallets/hooks/useWallets";
 import { useTransactions } from "@/services/transactions/hooks/useTransactions";
+import TransferWalletModal from "@/components/more/TransferWalletModal";
 import { monthFormatter } from "@/services/reports/plugin";
 import {
   formatCompactRupiah,
   formatRupiah,
   formatShortThousand,
 } from "@/lib/formatterRupiah";
-
-const MONTHS_SHORT = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "Mei",
-  "Jun",
-  "Jul",
-  "Agu",
-  "Sep",
-  "Okt",
-  "Nov",
-  "Des",
-];
-
-const MONTHS_FULL = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember",
-];
 
 const resolveWalletType = (name: string): WalletSummaryItem["type"] => {
   const lower = name.toLowerCase();
@@ -106,38 +82,77 @@ const HomeScreen = () => {
   const now = useMemo(() => new Date(), []);
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
   const [selectedMonthIdx, setSelectedMonthIdx] = useState<number>(
-    now.getMonth()
+    now.getMonth(),
   );
   const [monthModalVisible, setMonthModalVisible] = useState(false);
+  const [transferModalVisible, setTransferModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const { mutateAsync: transferWallet, isPending: isTransferringWallet } =
+    useTransferWallet();
 
   const selectedMonthKey = `${selectedYear}-${String(
-    selectedMonthIdx + 1
+    selectedMonthIdx + 1,
   ).padStart(2, "0")}`;
 
   const { start, end } = useMemo(
     () => monthFormatter(selectedMonthKey),
-    [selectedMonthKey]
+    [selectedMonthKey],
   );
 
   // 1. Summary & Active Balance
-  const { data: summaryData } = useReportSummary(selectedMonthKey);
+  const {
+    data: summaryData,
+    isLoading: isSummaryLoading,
+    refetch: refetchSummary,
+  } = useReportSummary(selectedMonthKey);
 
   // 2. Wallets
-  const { data: walletRows = [] } = useWalletBalances();
+  const { data: walletRows = [], refetch: refetchWallets } =
+    useWalletBalances();
 
   // 3. 12-Month Trend
-  const { data: trendReport } = useMonthlyTrends(selectedYear);
+  const { data: trendReport, refetch: refetchTrends } =
+    useMonthlyTrends(selectedYear);
 
   // 4. Monthly Budgets by Category
-  const { data: categoryReport } = useReportByCategory(selectedMonthKey);
+  const {
+    data: categoryReport,
+    isLoading: isCategoryLoading,
+    refetch: refetchCategories,
+  } = useReportByCategory(selectedMonthKey);
 
   // 5. Recent Transactions (latest 5 in selected month)
-  const { data: txData } = useTransactions({
+  const {
+    data: txData,
+    isLoading: isTxLoading,
+    refetch: refetchTx,
+  } = useTransactions({
     from: start,
     to: end,
     limit: 5,
     page: 1,
   });
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchSummary(),
+        refetchWallets(),
+        refetchTrends(),
+        refetchCategories(),
+        refetchTx(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [
+    refetchSummary,
+    refetchWallets,
+    refetchTrends,
+    refetchCategories,
+    refetchTx,
+  ]);
 
   // Format total active balance
   const totalBalanceFormatted = useMemo(() => {
@@ -197,7 +212,7 @@ const HomeScreen = () => {
     return { trendItems: items, peakLabel: peak };
   }, [trendReport?.data, selectedMonthIdx]);
 
-  // Format budget items (prioritize categories with a budget set, otherwise show categories with spending or all expense categories)
+  // Format budget items
   const budgetItems: BudgetOverviewItem[] = useMemo(() => {
     const rawItems = categoryReport?.items ?? [];
     const withLimit = rawItems.filter((item) => item.limit !== null);
@@ -206,6 +221,7 @@ const HomeScreen = () => {
     return sourceList.map((item) => ({
       id: String(item.id),
       name: item.name,
+      color: item.color,
       spent: typeof item.spent === "number" ? item.spent : 0,
       limit: item.limit,
       icon: resolveCategoryIcon(item.name),
@@ -213,7 +229,7 @@ const HomeScreen = () => {
     }));
   }, [categoryReport?.items]);
 
-  // Format recent transactions
+  // Format recent transactions (informational only)
   const recentTxItems: RecentTransactionItem[] = useMemo(() => {
     const rows = txData?.items ?? [];
     return rows.map((tx) => {
@@ -224,6 +240,7 @@ const HomeScreen = () => {
         id: String(tx.id),
         title,
         category,
+        categoryColor: tx.categoryColor,
         wallet,
         dateLabel: formatDateIndonesian(tx.date),
         amount: tx.amount,
@@ -233,25 +250,21 @@ const HomeScreen = () => {
     });
   }, [txData?.items]);
 
-  // Dynamic saving tip
-  const savingTipText = useMemo(() => {
-    const overBudget = budgetItems.find(
-      (b) => b.status === "melebihi" || b.status === "habis"
-    );
-    if (overBudget) {
-      return `Anggaran ${overBudget.name.toLowerCase()} sisa 0%. Yuk tahan pengeluaran di kategori ini!`;
-    }
-    if ((summaryData?.expense ?? 0) > (summaryData?.income ?? 0)) {
-      return "Pengeluaran bulan ini melebihi pemasukan. Catat setiap belanja agar tetap terkontrol!";
-    }
-    return "Keuanganmu bulan ini terkendali dengan baik. Pertahankan kebiasaan menabung!";
-  }, [budgetItems, summaryData?.expense, summaryData?.income]);
+  const isInitialLoading = isSummaryLoading && isCategoryLoading && isTxLoading;
 
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.primaryText}
+            colors={[theme.primaryText]}
+          />
+        }
       >
         <HomeHeader
           income={summaryData?.income ?? 0}
@@ -262,112 +275,107 @@ const HomeScreen = () => {
           onPressMonthSelector={() => setMonthModalVisible(true)}
         />
 
-        <ActiveBalanceCard
-          totalBalance={totalBalanceFormatted}
-          wallets={walletItems}
-        />
+        {isInitialLoading ? (
+          <CardListSkeleton rows={4} label='Memuat ringkasan beranda...' />
+        ) : (
+          <>
+            <ActiveBalanceCard
+              totalBalance={totalBalanceFormatted}
+              wallets={walletItems}
+            />
 
-        <IncomeExpenseSummary
-          incomeAmount={incomeFormatted}
-          incomeCount={summaryData?.incomeCount ?? 0}
-          expenseAmount={expenseFormatted}
-          expenseCount={summaryData?.expenseCount ?? 0}
-        />
+            <IncomeExpenseSummary
+              incomeAmount={incomeFormatted}
+              incomeCount={summaryData?.incomeCount ?? 0}
+              expenseAmount={expenseFormatted}
+              expenseCount={summaryData?.expenseCount ?? 0}
+            />
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setTransferModalVisible(true)}
+              style={[
+                styles.transferBannerCard,
+                {
+                  backgroundColor: isDark ? "#0F1523" : theme.card,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <View style={styles.transferBannerLeft}>
+                <View
+                  style={[
+                    styles.transferBannerIconBox,
+                    { backgroundColor: theme.primarySoftBg },
+                  ]}
+                >
+                  <ArrowLeftRight
+                    size={16}
+                    color={theme.primaryText}
+                    strokeWidth={2.3}
+                  />
+                </View>
+                <View style={styles.transferBannerTextCol}>
+                  <Text
+                    style={[styles.transferBannerTitle, { color: theme.text }]}
+                  >
+                    Pindah Dana Antar Dompet
+                  </Text>
+                  <Text
+                    style={[
+                      styles.transferBannerSub,
+                      { color: theme.textMuted },
+                    ]}
+                  >
+                    Transfer saldo antar dompet tanpa mengubah laporan pemasukan
+                  </Text>
+                </View>
+              </View>
 
-        <MonthlyTrendCard
-          periodLabel={`Jan ${selectedYear} - Des ${selectedYear}`}
-          peakLabel={peakLabel}
-          data={trendItems}
-          onPressDetail={() => router.push("/transaction")}
-        />
+              <View
+                style={[
+                  styles.transferBannerChevron,
+                  {
+                    backgroundColor: isDark ? "#182235" : "#F3F4F6",
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <ChevronRight size={15} color={theme.text} />
+              </View>
+            </TouchableOpacity>
 
-        <MonthlyBudgetSection items={budgetItems} />
+            <MonthlyTrendCard
+              periodLabel={`Jan ${selectedYear} - Des ${selectedYear}`}
+              peakLabel={peakLabel}
+              data={trendItems}
+              onPressDetail={() => router.push("/financialReport")}
+            />
 
-        <RecentTransactionsSection items={recentTxItems} />
+            <MonthlyBudgetSection items={budgetItems} />
 
-        <SavingTipsBanner description={savingTipText} />
+            <RecentTransactionsSection items={recentTxItems} />
+          </>
+        )}
       </ScrollView>
 
-      {/* Month Picker Modal */}
-      <Modal
+      <MonthYearPickerModal
         visible={monthModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setMonthModalVisible(false)}
-      >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => setMonthModalVisible(false)}
-        >
-          <Pressable
-            style={[
-              styles.modalCard,
-              {
-                backgroundColor: isDark ? "#0F1523" : theme.card,
-                borderColor: theme.border,
-              },
-            ]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View style={styles.yearRow}>
-              <TouchableOpacity
-                onPress={() => setSelectedYear((y) => y - 1)}
-                style={[styles.yearBtn, { borderColor: theme.border }]}
-              >
-                <Text style={{ color: theme.text, fontWeight: "700" }}>
-                  {"<"}
-                </Text>
-              </TouchableOpacity>
-              <Text style={[styles.yearTitle, { color: theme.text }]}>
-                {selectedYear}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setSelectedYear((y) => y + 1)}
-                style={[styles.yearBtn, { borderColor: theme.border }]}
-              >
-                <Text style={{ color: theme.text, fontWeight: "700" }}>
-                  {">"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+        selectedYear={selectedYear}
+        selectedMonthIdx={selectedMonthIdx}
+        onChangeYear={setSelectedYear}
+        onSelectMonth={setSelectedMonthIdx}
+        onClose={() => setMonthModalVisible(false)}
+      />
 
-            <View style={styles.monthsGrid}>
-              {MONTHS_SHORT.map((label, idx) => {
-                const isSelected = idx === selectedMonthIdx;
-                return (
-                  <TouchableOpacity
-                    key={label}
-                    style={[
-                      styles.monthChip,
-                      {
-                        backgroundColor: isSelected
-                          ? theme.primary
-                          : isDark
-                            ? "#182235"
-                            : "#F3F4F6",
-                      },
-                    ]}
-                    onPress={() => {
-                      setSelectedMonthIdx(idx);
-                      setMonthModalVisible(false);
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: isSelected ? "#0A1402" : theme.text,
-                        fontWeight: isSelected ? "800" : "600",
-                        fontSize: 13,
-                      }}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <TransferWalletModal
+        visible={transferModalVisible}
+        wallets={walletRows}
+        onClose={() => setTransferModalVisible(false)}
+        onSubmit={async (payload) => {
+          await transferWallet(payload);
+        }}
+        isSubmitting={isTransferringWallet}
+      />
     </View>
   );
 };
@@ -383,48 +391,47 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 110,
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  modalCard: {
-    width: "100%",
-    maxWidth: 340,
-    borderRadius: 22,
-    padding: 20,
-    borderWidth: 1,
-  },
-  yearRow: {
+  transferBannerCard: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
-  },
-  yearBtn: {
-    width: 36,
-    height: 36,
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderRadius: 18,
     borderWidth: 1,
+    marginBottom: 14,
+    gap: 10,
+  },
+  transferBannerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+    flex: 1,
+  },
+  transferBannerIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
     justifyContent: "center",
     alignItems: "center",
   },
-  yearTitle: {
-    fontSize: 16,
+  transferBannerTextCol: {
+    flex: 1,
+  },
+  transferBannerTitle: {
+    fontSize: 13,
     fontWeight: "800",
   },
-  monthsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    justifyContent: "space-between",
+  transferBannerSub: {
+    fontSize: 11,
+    marginTop: 2,
   },
-  monthChip: {
-    width: "30%",
-    paddingVertical: 10,
-    borderRadius: 12,
+  transferBannerChevron: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: "center",
     alignItems: "center",
   },
 });

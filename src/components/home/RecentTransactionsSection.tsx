@@ -28,6 +28,7 @@ export interface RecentTransactionItem {
   id: string;
   title: string;
   category: string;
+  categoryColor?: string | null;
   wallet: string;
   dateLabel: string;
   amount: number;
@@ -42,18 +43,27 @@ interface RecentTransactionsSectionProps {
 export const resolveTransactionIcon = (
   title: string,
   category: string,
-  type: "income" | "expense"
+  type: "income" | "expense",
 ): RecentTxIconKey => {
   if (type === "income") return "gem";
   const text = `${title} ${category}`.toLowerCase();
-  if (text.includes("es ") || text.includes("jeruk") || text.includes("minum") || text.includes("kopi"))
+  if (
+    text.includes("es ") ||
+    text.includes("jeruk") ||
+    text.includes("minum") ||
+    text.includes("kopi")
+  )
     return "drink";
   if (text.includes("bakso") || text.includes("ayam")) return "drumstick";
   if (text.includes("gacoan") || text.includes("mie") || text.includes("jajan"))
     return "soup";
   if (text.includes("nasi") || text.includes("makan")) return "sandwich";
   if (text.includes("belanja") || text.includes("kebutuhan")) return "shopping";
-  if (text.includes("bensin") || text.includes("transport") || text.includes("parkir"))
+  if (
+    text.includes("bensin") ||
+    text.includes("transport") ||
+    text.includes("parkir")
+  )
     return "transport";
   return "receipt";
 };
@@ -64,8 +74,13 @@ const RecentTransactionsSection = ({
   const { theme, isDark } = useTheme();
   const cardBg = isDark ? "#0F1523" : theme.card;
 
-  const renderIcon = (icon: RecentTxIconKey, isIncome: boolean) => {
-    const color = isIncome ? theme.primary : "#93C5FD";
+  const renderIcon = (
+    icon: RecentTxIconKey,
+    isIncome: boolean,
+    categoryColor?: string | null,
+  ) => {
+    const color =
+      categoryColor || (isIncome ? theme.primaryText : "#3B82F6");
     const size = 18;
     switch (icon) {
       case "gem":
@@ -95,14 +110,11 @@ const RecentTransactionsSection = ({
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
             Transaksi Terbaru
           </Text>
-          <Text style={[styles.sectionSubtitle, { color: theme.textMuted }]}>
-            Aktivitas keuangan paling mutakhir
-          </Text>
         </View>
 
         <Link
-          href="/transaction"
-          style={[styles.seeAllText, { color: theme.primary }]}
+          href='/transaction'
+          style={[styles.seeAllText, { color: theme.primaryText }]}
         >
           Lihat Semua
         </Link>
@@ -124,11 +136,13 @@ const RecentTransactionsSection = ({
         ) : (
           items.map((item) => {
             const isIncome = item.type === "income";
-            const iconBg = isIncome
-              ? "rgba(180, 240, 0, 0.14)"
-              : isDark
-                ? "#182235"
-                : "#F3F4F6";
+            const iconBg = item.categoryColor
+              ? `${item.categoryColor}20`
+              : isIncome
+                ? "rgba(180, 240, 0, 0.14)"
+                : isDark
+                  ? "#182235"
+                  : "#F3F4F6";
 
             return (
               <View key={item.id} style={styles.txRow}>
@@ -136,7 +150,7 @@ const RecentTransactionsSection = ({
                   <View
                     style={[styles.iconCircle, { backgroundColor: iconBg }]}
                   >
-                    {renderIcon(item.icon, isIncome)}
+                    {renderIcon(item.icon, isIncome, item.categoryColor)}
                   </View>
 
                   <View style={styles.txInfo}>
@@ -158,7 +172,7 @@ const RecentTransactionsSection = ({
                 <Text
                   style={[
                     styles.txAmount,
-                    { color: isIncome ? theme.primary : theme.text },
+                    { color: isIncome ? theme.primaryText : theme.text },
                   ]}
                 >
                   {isIncome ? "+" : "-"}Rp {formatRupiah(String(item.amount))}

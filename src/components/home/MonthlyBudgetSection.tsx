@@ -34,6 +34,7 @@ export type BudgetIconKey =
 export interface BudgetOverviewItem {
   id: string;
   name: string;
+  color?: string;
   spent: number;
   limit: number | null;
   icon: BudgetIconKey;
@@ -106,14 +107,11 @@ const MonthlyBudgetSection = ({ items }: MonthlyBudgetSectionProps) => {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
             Anggaran Bulan Ini
           </Text>
-          <Text style={[styles.sectionSubtitle, { color: theme.textMuted }]}>
-            Pantau batas belanja agar tetap aman
-          </Text>
         </View>
 
         <Link
-          href="/budget"
-          style={[styles.seeAllText, { color: theme.primary }]}
+          href='/budget'
+          style={[styles.seeAllText, { color: theme.primaryText }]}
         >
           Lihat Semua
         </Link>
@@ -137,21 +135,23 @@ const MonthlyBudgetSection = ({ items }: MonthlyBudgetSectionProps) => {
             const hasLimit = item.limit !== null && item.limit > 0;
             const limitVal = item.limit ?? 0;
             const isOver =
-              item.status === "melebihi" ||
-              (hasLimit && item.spent > limitVal);
-            const accentColor = isOver ? "#F87171" : theme.primary;
-            const iconBg = isOver
-              ? "rgba(248, 113, 113, 0.14)"
-              : "rgba(180, 240, 0, 0.12)";
+              item.status === "melebihi" || (hasLimit && item.spent > limitVal);
+            const categoryColor = item.color || theme.primary;
+            const progressColor = isOver ? "#F87171" : categoryColor;
+            const iconBg = `${categoryColor}20`;
             const badgeBg = isOver
               ? "rgba(248, 113, 113, 0.1)"
-              : "rgba(180, 240, 0, 0.1)";
+              : theme.primarySoftBg;
             const badgeBorder = isOver
               ? "rgba(248, 113, 113, 0.35)"
-              : "rgba(180, 240, 0, 0.35)";
+              : theme.primarySoftBorder;
 
             const ratio = hasLimit
               ? Math.min((item.spent / limitVal) * 100, 100)
+              : 0;
+            const remainingVal = hasLimit ? limitVal - item.spent : 0;
+            const usedPct = hasLimit
+              ? Math.round((item.spent / limitVal) * 100)
               : 0;
             const isLast = idx === items.length - 1;
 
@@ -168,10 +168,8 @@ const MonthlyBudgetSection = ({ items }: MonthlyBudgetSectionProps) => {
               >
                 <View style={styles.itemTopRow}>
                   <View style={styles.itemLeftRow}>
-                    <View
-                      style={[styles.iconBox, { backgroundColor: iconBg }]}
-                    >
-                      {renderCategoryIcon(item.icon, accentColor)}
+                    <View style={[styles.iconBox, { backgroundColor: iconBg }]}>
+                      {renderCategoryIcon(item.icon, categoryColor)}
                     </View>
 
                     <View style={styles.itemTextCol}>
@@ -210,7 +208,7 @@ const MonthlyBudgetSection = ({ items }: MonthlyBudgetSectionProps) => {
                   >
                     {isOver ? (
                       <>
-                        <TriangleAlert size={11} color="#F87171" />
+                        <TriangleAlert size={11} color='#F87171' />
                         <Text style={[styles.statusText, { color: "#F87171" }]}>
                           Melebihi
                         </Text>
@@ -220,11 +218,14 @@ const MonthlyBudgetSection = ({ items }: MonthlyBudgetSectionProps) => {
                         <View
                           style={[
                             styles.statusDot,
-                            { backgroundColor: theme.primary },
+                            { backgroundColor: theme.primaryText },
                           ]}
                         />
                         <Text
-                          style={[styles.statusText, { color: theme.primary }]}
+                          style={[
+                            styles.statusText,
+                            { color: theme.primaryText },
+                          ]}
                         >
                           Aman
                         </Text>
@@ -244,7 +245,7 @@ const MonthlyBudgetSection = ({ items }: MonthlyBudgetSectionProps) => {
                     <View
                       style={[
                         styles.progressZeroDot,
-                        { backgroundColor: theme.primary },
+                        { backgroundColor: categoryColor },
                       ]}
                     />
                   ) : (
@@ -255,12 +256,57 @@ const MonthlyBudgetSection = ({ items }: MonthlyBudgetSectionProps) => {
                           width: isOver
                             ? "100%"
                             : `${Math.max(hasLimit ? ratio : 20, 4)}%`,
-                          backgroundColor: accentColor,
+                          backgroundColor: progressColor,
                         },
                       ]}
                     />
                   )}
                 </View>
+
+                {hasLimit && (
+                  <View style={styles.remainingRow}>
+                    <Text
+                      style={[
+                        styles.remainingLabel,
+                        { color: isOver ? "#F87171" : theme.textMuted },
+                      ]}
+                    >
+                      {isOver ? (
+                        <>
+                          Sisa Rp 0{" • "}
+                          <Text style={styles.overBudgetStrong}>
+                            Lebih Rp{" "}
+                            {formatRupiah(String(Math.abs(remainingVal)))}
+                          </Text>
+                        </>
+                      ) : (
+                        <>
+                          Sisa :{" "}
+                          <Text
+                            style={[
+                              styles.remainingStrong,
+                              { color: theme.primaryText },
+                            ]}
+                          >
+                            Rp{" "}
+                            {remainingVal === 0
+                              ? "0"
+                              : formatRupiah(String(remainingVal))}
+                          </Text>
+                        </>
+                      )}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.usedPctText,
+                        { color: isOver ? "#F87171" : theme.textMuted },
+                      ]}
+                    >
+                      {usedPct}% terpakai
+                    </Text>
+                  </View>
+                )}
               </View>
             );
           })
@@ -374,5 +420,26 @@ const styles = StyleSheet.create({
   progressFill: {
     height: "100%",
     borderRadius: 999,
+  },
+  remainingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 7,
+  },
+  remainingLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  remainingStrong: {
+    fontWeight: "700",
+  },
+  overBudgetStrong: {
+    color: "#F87171",
+    fontWeight: "700",
+  },
+  usedPctText: {
+    fontSize: 11,
+    fontWeight: "600",
   },
 });
