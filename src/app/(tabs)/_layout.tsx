@@ -29,7 +29,6 @@ const Layout = () => {
       <View
         style={{
           backgroundColor: theme.tabBackground,
-          borderBottomColor: theme.border,
           borderWidth: 0.4,
         }}
       >
@@ -44,13 +43,13 @@ const Layout = () => {
           tabBarStyle: {
             backgroundColor: theme.tabBackground,
             position: "absolute",
-            bottom: 0,
+            bottom: 8,
             height: 70,
-            paddingTop: 6,
-            borderColor: theme.border,
+            paddingTop: 9,
             borderTopWidth: 1.2,
+            marginHorizontal: 4,
             borderWidth: 1.2,
-            borderRadius: 16,
+            borderRadius: 100,
             elevation: 0,
           },
           animation: "fade",
@@ -102,7 +101,7 @@ const Layout = () => {
                     shadowRadius: 4,
                   }}
                 >
-                  <Plus color='#FFFFFF' size={28} strokeWidth={2.5} />
+                  <Plus color='#000000' size={28} strokeWidth={2.5} />
                 </View>
               </TouchableOpacity>
             ),

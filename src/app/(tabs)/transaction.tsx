@@ -3,8 +3,8 @@ import React from "react";
 import { Colors } from "@/constants/Colors";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
-import ThemedView from "@/components/ThemedView";
-import ThemedText from "@/components/ThemedText";
+import ThemedView from "@/components/ui/ThemedView";
+import ThemedText from "@/components/ui/ThemedText";
 
 const transaction = () => {
   return (

@@ -3,6 +3,7 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useDatabaseReady } from "@/db/useDatabaseReady";
 import { Colors } from "@/constants/Colors";
+import { ModalTransactionProvider } from "@/context/ModalTransactionContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,7 +27,6 @@ const RootLayout = () => {
       background: c.background, // #0B1C30
       card: c.tabBackground,
       text: c.text,
-      border: c.border,
     },
   };
 
@@ -50,25 +50,27 @@ const RootLayout = () => {
   return (
     <ThemeProvider value={navTheme}>
       <QueryClientProvider client={queryClient}>
-        <Stack>
-          <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+        <ModalTransactionProvider>
+          <Stack>
+            <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
 
-          <Stack.Screen
-            name='addTransactionModal'
-            options={{
-              animation: "slide_from_bottom",
-              headerShown: false,
-              presentation: "formSheet",
-              sheetGrabberVisible: true,
-              sheetInitialDetentIndex: 0,
-              sheetAllowedDetents: [0.75, 1],
-              gestureDirection: "vertical",
-              sheetCornerRadius: 20,
-              sheetExpandsWhenScrolledToEdge: true,
-              sheetElevation: 24,
-            }}
-          />
-        </Stack>
+            <Stack.Screen
+              name='addTransactionModal'
+              options={{
+                animation: "slide_from_bottom",
+                headerShown: false,
+                presentation: "formSheet",
+                sheetGrabberVisible: true,
+                sheetInitialDetentIndex: 0,
+                sheetAllowedDetents: [0.75, 1],
+                gestureDirection: "vertical",
+                sheetCornerRadius: 20,
+                sheetExpandsWhenScrolledToEdge: true,
+                sheetElevation: 24,
+              }}
+            />
+          </Stack>
+        </ModalTransactionProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

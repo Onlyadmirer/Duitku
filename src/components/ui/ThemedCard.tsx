@@ -13,18 +13,10 @@ const ThemedCard = ({ style, children, ...props }: ThemedCardProps) => {
   const theme = Colors[colorScheme];
 
   return (
-    <SafeAreaView
-      style={[{ backgroundColor: theme.card }, styles.card, style]}
-      {...props}
-    />
+    <SafeAreaView style={[{ backgroundColor: theme.card }, style]} {...props}>
+      {children}
+    </SafeAreaView>
   );
 };
 
 export default ThemedCard;
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 5,
-    padding: 20,
-  },
-});
