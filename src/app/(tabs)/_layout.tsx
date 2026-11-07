@@ -6,28 +6,27 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import { router, Tabs } from "expo-router";
+import { Tabs } from "expo-router";
 import {
-  Bell,
   ChartPie,
   House,
   LayoutGrid,
   Plus,
   ReceiptText,
-  User,
 } from "lucide-react-native";
 import { Colors } from "@/constants/Colors";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { useModalTransactionContext } from "@/context/ModalTransactionContext";
 
 const Layout = () => {
   const colorScheme = useColorScheme() ?? "dark";
   const theme = Colors[colorScheme];
-  const isDark = colorScheme === "dark";
+  const { openAddModal } = useModalTransactionContext();
 
   return (
-    <>
-      <StatusBar animated={true} style="auto" />
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <StatusBar animated={true} style='auto' />
       <SafeAreaView
         edges={["top"]}
         style={[
@@ -45,38 +44,13 @@ const Layout = () => {
           />
           <Text style={[styles.brandText, { color: theme.text }]}>Duitku</Text>
         </View>
-
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            activeOpacity={0.75}
-            style={[
-              styles.iconButton,
-              {
-                backgroundColor: isDark ? "#111726" : theme.card,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <Bell size={18} color={theme.text} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.75}
-            style={[
-              styles.iconButton,
-              {
-                backgroundColor: isDark ? "#111726" : theme.card,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <User size={18} color={theme.text} />
-          </TouchableOpacity>
-        </View>
       </SafeAreaView>
 
       <Tabs
         screenOptions={{
+          sceneStyle: {
+            backgroundColor: theme.background,
+          },
           tabBarActiveTintColor: theme.tabActive,
           tabBarInactiveTintColor: theme.tabInActive,
           tabBarStyle: {
@@ -102,27 +76,27 @@ const Layout = () => {
         }}
       >
         <Tabs.Screen
-          name="index"
+          name='index'
           options={{
             title: "Beranda",
             tabBarIcon: ({ color }) => <House size={22} color={color} />,
           }}
         />
         <Tabs.Screen
-          name="transaction"
+          name='transaction'
           options={{
             title: "Transaksi",
             tabBarIcon: ({ color }) => <ReceiptText size={22} color={color} />,
           }}
         />
         <Tabs.Screen
-          name="addTransaction"
+          name='addTransaction'
           options={{
             title: "",
             tabBarButton: () => (
               <TouchableOpacity
                 style={styles.fabContainer}
-                onPress={() => router.push("/addTransactionModal")}
+                onPress={openAddModal}
               >
                 <View
                   style={[
@@ -133,28 +107,28 @@ const Layout = () => {
                     },
                   ]}
                 >
-                  <Plus color="#000000" size={28} strokeWidth={2.5} />
+                  <Plus color='#000000' size={28} strokeWidth={2.5} />
                 </View>
               </TouchableOpacity>
             ),
           }}
         />
         <Tabs.Screen
-          name="budget"
+          name='budget'
           options={{
             title: "Anggaran",
             tabBarIcon: ({ color }) => <ChartPie size={22} color={color} />,
           }}
         />
         <Tabs.Screen
-          name="more"
+          name='more'
           options={{
             title: "Lainnya",
             tabBarIcon: ({ color }) => <LayoutGrid size={22} color={color} />,
           }}
         />
       </Tabs>
-    </>
+    </View>
   );
 };
 

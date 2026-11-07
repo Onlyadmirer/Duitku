@@ -6,6 +6,10 @@ export const Colors = {
     text: "#111111",          // Hitam pekat untuk teks & angka utama
     textMuted: "#8E8E93",     // Abu-abu medium untuk label/subtitle
     primary: "#B4F000",       // Electric Lime Green untuk kartu utama, highlight & progress bar
+    primaryText: "#15803D",   // Hijau kontras tinggi untuk teks & ikon di atas latar putih/terang
+    primarySoftBg: "rgba(22, 163, 74, 0.12)",
+    primarySoftBorder: "rgba(22, 163, 74, 0.35)",
+    chartIncome: "#65A30D",   // Hijau lime tegas untuk batang chart di mode terang
     tabBackground: "#111111", // Kapsul navigasi bawah selalu hitam pekat
     tabActive: "#B4F000",     // Ikon tab aktif menggunakan hijau lime (atau "#FFFFFF")
     tabInActive: "#71717A",   // Ikon tab tidak aktif
@@ -27,6 +31,10 @@ export const Colors = {
     text: "#FAFAFA",          // Putih untuk teks utama
     textMuted: "#8E8E93",     // Abu-abu untuk subtitle
     primary: "#B4F000",       // Electric Lime tetap menyala di mode gelap
+    primaryText: "#B4F000",   // Hijau lime menyala untuk teks & ikon di atas latar gelap
+    primarySoftBg: "rgba(180, 240, 0, 0.14)",
+    primarySoftBorder: "rgba(180, 240, 0, 0.35)",
+    chartIncome: "#B4F000",
     tabBackground: "#1C1C1E", // Kapsul navigasi bawah di mode gelap
     tabActive: "#B4F000",
     tabInActive: "#71717A",

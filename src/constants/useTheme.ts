@@ -1,10 +1,10 @@
 import { useColorScheme } from 'react-native';
-import { Colors } from '@/constants/Colors'; // sesuaikan path file Colors Anda
+import { Colors } from '@/constants/Colors';
 
 export function useTheme() {
-  const scheme = useColorScheme(); // menghasilkan 'light' atau 'dark'
+  const scheme = useColorScheme() ?? 'dark';
   const isDark = scheme === 'dark';
-  const theme = Colors[scheme ?? 'light'];
+  const theme = Colors[scheme];
 
   return { theme, isDark, scheme };
 }
