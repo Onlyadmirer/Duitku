@@ -1,7 +1,18 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { addTransaction, fetchTransactions, getOneTransaction, removeTransaction, transactionUpdate } from "../transactions"
-import { addTransactionType, listTransactionType, updateTransactionType } from "../type"
-
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  addTransaction,
+  fetchTransactions,
+  getOneTransaction,
+  removeTransaction,
+  transactionUpdate,
+} from "../transactions";
+import {
+  addTransactionType,
+  listTransactionType,
+  updateTransactionType,
+} from "../type";
+import { reportKeys } from "@/services/reports/hooks/useReports";
+import { walletKeys } from "@/services/wallets/hooks/useWallets";
 
 export const transactionKeys = {
   all: ["transactions"] as const,
@@ -9,11 +20,8 @@ export const transactionKeys = {
   list: (params: listTransactionType) =>
     [...transactionKeys.lists(), params] as const,
   details: () => [...transactionKeys.all, "detail"] as const,
-  detail: (id: number) =>
-    [...transactionKeys.details(), id] as const,
+  detail: (id: number) => [...transactionKeys.details(), id] as const,
 };
-
-
 
 export function useTransactions(params: listTransactionType) {
   return useQuery({
@@ -25,42 +33,43 @@ export function useTransactions(params: listTransactionType) {
 export function useTransaction(id: number) {
   return useQuery({
     queryKey: transactionKeys.detail(id),
-    queryFn: () => getOneTransaction(id)
-  })
+    queryFn: () => getOneTransaction(id),
+  });
 }
 
 export function useAddTransaction() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: addTransactionType) => addTransaction(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: transactionKeys.all
-      })
-    }
-  })
+      queryClient.invalidateQueries({ queryKey: transactionKeys.all });
+      queryClient.invalidateQueries({ queryKey: reportKeys.all });
+      queryClient.invalidateQueries({ queryKey: walletKeys.all });
+    },
+  });
 }
 
 export function useUpdateTransaction() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: updateTransactionType }) => transactionUpdate(id, data),
+    mutationFn: ({ id, data }: { id: number; data: updateTransactionType }) =>
+      transactionUpdate(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: transactionKeys.all
-      })
-    }
-  })
+      queryClient.invalidateQueries({ queryKey: transactionKeys.all });
+      queryClient.invalidateQueries({ queryKey: reportKeys.all });
+      queryClient.invalidateQueries({ queryKey: walletKeys.all });
+    },
+  });
 }
 
 export function useRemoveTransaction() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => removeTransaction(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: transactionKeys.all
-      })
-    }
-  })
+      queryClient.invalidateQueries({ queryKey: transactionKeys.all });
+      queryClient.invalidateQueries({ queryKey: reportKeys.all });
+      queryClient.invalidateQueries({ queryKey: walletKeys.all });
+    },
+  });
 }

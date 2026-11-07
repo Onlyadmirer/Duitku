@@ -3,13 +3,15 @@ import {
   Text,
   useColorScheme,
   StyleSheet,
-  Pressable,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { router, Tabs } from "expo-router";
 import {
+  Bell,
+  ChartPie,
   House,
-  LayoutGridCircles,
+  LayoutGrid,
   Plus,
   ReceiptText,
   User,
@@ -17,25 +19,62 @@ import {
 import { Colors } from "@/constants/Colors";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { ChartPie } from "lucide-react-native/icons";
 
 const Layout = () => {
-  const colorScheme = useColorScheme() ?? "light";
+  const colorScheme = useColorScheme() ?? "dark";
   const theme = Colors[colorScheme];
+  const isDark = colorScheme === "dark";
 
   return (
     <>
-      <StatusBar animated={true} style='auto' />
-      <View
-        style={{
-          backgroundColor: theme.tabBackground,
-          borderWidth: 0.4,
-        }}
+      <StatusBar animated={true} style="auto" />
+      <SafeAreaView
+        edges={["top"]}
+        style={[
+          styles.topBar,
+          {
+            backgroundColor: theme.background,
+            borderBottomColor: theme.border,
+          },
+        ]}
       >
-        <SafeAreaView style={styles.topBar}>
-          <Text style={styles.text}>Duitku</Text>
-        </SafeAreaView>
-      </View>
+        <View style={styles.brandRow}>
+          <Image
+            source={require("../../assets/image.png")}
+            style={styles.logo}
+          />
+          <Text style={[styles.brandText, { color: theme.text }]}>Duitku</Text>
+        </View>
+
+        <View style={styles.actionsRow}>
+          <TouchableOpacity
+            activeOpacity={0.75}
+            style={[
+              styles.iconButton,
+              {
+                backgroundColor: isDark ? "#111726" : theme.card,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <Bell size={18} color={theme.text} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.75}
+            style={[
+              styles.iconButton,
+              {
+                backgroundColor: isDark ? "#111726" : theme.card,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <User size={18} color={theme.text} />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: theme.tabActive,
@@ -47,80 +86,71 @@ const Layout = () => {
             height: 70,
             paddingTop: 9,
             borderTopWidth: 1.2,
-            marginHorizontal: 4,
+            borderTopColor: theme.border,
+            marginHorizontal: 8,
             borderWidth: 1.2,
+            borderColor: theme.border,
             borderRadius: 100,
             elevation: 0,
           },
           animation: "fade",
           tabBarLabelStyle: {
-            fontSize: 9,
+            fontSize: 10,
+            fontWeight: "600",
           },
           headerShown: false,
         }}
       >
         <Tabs.Screen
-          name='index'
+          name="index"
           options={{
             title: "Beranda",
             tabBarIcon: ({ color }) => <House size={22} color={color} />,
           }}
         />
         <Tabs.Screen
-          name='transaction'
+          name="transaction"
           options={{
-            title: "transaction",
+            title: "Transaksi",
             tabBarIcon: ({ color }) => <ReceiptText size={22} color={color} />,
           }}
         />
         <Tabs.Screen
-          name='addTransaction'
+          name="addTransaction"
           options={{
             title: "",
             tabBarButton: () => (
               <TouchableOpacity
-                style={{
-                  top: -16,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
+                style={styles.fabContainer}
                 onPress={() => router.push("/addTransactionModal")}
               >
                 <View
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 28,
-                    backgroundColor: theme.primary,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    elevation: 5,
-                    shadowColor: theme.primary,
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 4,
-                  }}
+                  style={[
+                    styles.fabButton,
+                    {
+                      backgroundColor: theme.primary,
+                      shadowColor: theme.primary,
+                    },
+                  ]}
                 >
-                  <Plus color='#000000' size={28} strokeWidth={2.5} />
+                  <Plus color="#000000" size={28} strokeWidth={2.5} />
                 </View>
               </TouchableOpacity>
             ),
           }}
         />
         <Tabs.Screen
-          name='budget'
+          name="budget"
           options={{
             title: "Anggaran",
             tabBarIcon: ({ color }) => <ChartPie size={22} color={color} />,
           }}
         />
         <Tabs.Screen
-          name='more'
+          name="more"
           options={{
             title: "Lainnya",
-            tabBarIcon: ({ color }) => (
-              <LayoutGridCircles size={22} color={color} />
-            ),
+            tabBarIcon: ({ color }) => <LayoutGrid size={22} color={color} />,
           }}
         />
       </Tabs>
@@ -130,13 +160,56 @@ const Layout = () => {
 
 const styles = StyleSheet.create({
   topBar: {
-    paddingHorizontal: 8,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottomWidth: 1,
   },
-  text: {
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  logo: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+  },
+  brandText: {
     fontSize: 20,
-    color: "#8B5CF6",
     fontWeight: "800",
+    letterSpacing: -0.3,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fabContainer: {
+    top: -16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fabButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
 });
 

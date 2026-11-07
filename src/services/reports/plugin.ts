@@ -1,16 +1,17 @@
 export function monthFormatter(date: string) {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(date)) {
-    throw new Error("Month format should be YYYY-MM")
+    throw new Error("Month format should be YYYY-MM");
   }
 
-  const [year, month] = date.split("-")
+  const [yearStr, monthStr] = date.split("-");
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
 
-  const nextYear = parseInt(month) === 12 ? year + 1 : year
-  const nextMonth = parseInt(month) === 12 ? 1 : month + 1
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
 
   return {
-    start: `${year}-${month.padStart(2, "0")}-01`,
-    end: `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`
-  }
-
+    start: `${year}-${String(month).padStart(2, "0")}-01`,
+    end: `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`,
+  };
 }

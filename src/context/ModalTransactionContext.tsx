@@ -1,4 +1,3 @@
-import { QUICK_AMOUNTS } from "@/components/addTransaction/AmountInput";
 import { Colors } from "@/constants/Colors";
 import { useTheme } from "@/constants/useTheme";
 import { formatRupiah, parseRupiah } from "@/lib/formatterRupiah";
@@ -6,7 +5,8 @@ import { useCategories } from "@/services/categories/hooks/useCategories";
 import { useAddTransaction } from "@/services/transactions/hooks/useTransactions";
 import { useWallets } from "@/services/wallets/hooks/useWallets";
 import { DateTimePickerChangeEvent } from "@react-native-community/datetimepicker";
-import { createContext, useContext, useState } from "react";
+import { router } from "expo-router";
+import { createContext, useContext, useEffect, useState } from "react";
 import { Platform } from "react-native";
 
 export type addTransactionType = {
@@ -54,7 +54,7 @@ interface TransactionContextType {
   handleChangeNominal: (val: string) => void;
   handleDateChange: (
     event: DateTimePickerChangeEvent,
-    selectedDate: Date,
+    selectedDate: Date
   ) => void;
   handleOnDismiss: () => void;
   handleSave: () => void;
@@ -75,13 +75,32 @@ export function ModalTransactionProvider({
   const [type, setType] = useState<"income" | "expense">("expense");
   const [amount, setAmount] = useState<string>("");
   const [walletId, setWalletId] = useState<number>(1);
-  const [categoryId, setCategoryId] = useState<number>(1);
+  const [categoryId, setCategoryId] = useState<number>(4);
   const [note, setNote] = useState<string>("");
 
   const [date, setDate] = useState<Date>(new Date());
   const [showPicker, setShowPicker] = useState(false);
 
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+
+  // fetch categories & wallets
+  const { data: categories = [] } = useCategories(type);
+  const { data: wallets = [] } = useWallets();
+
+  useEffect(() => {
+    if (
+      categories.length > 0 &&
+      !categories.some((cat) => cat.id === categoryId)
+    ) {
+      setCategoryId(categories[0].id);
+    }
+  }, [categories, categoryId]);
+
+  useEffect(() => {
+    if (wallets.length > 0 && !wallets.some((w) => w.id === walletId)) {
+      setWalletId(wallets[0].id);
+    }
+  }, [wallets, walletId]);
 
   // amount
   const handleChangeNominal = (value: string) => {
@@ -110,7 +129,7 @@ export function ModalTransactionProvider({
   // date picker
   const handleDateChange = (
     event: DateTimePickerChangeEvent,
-    selectedDate: Date,
+    selectedDate: Date
   ) => {
     if (Platform.OS === "android") {
       setShowPicker(false);
@@ -120,7 +139,6 @@ export function ModalTransactionProvider({
     }
   };
 
-  //
   const handleOnDismiss = () => {
     if (Platform.OS === "android") {
       setShowPicker(false);
@@ -134,34 +152,32 @@ export function ModalTransactionProvider({
     year: "numeric",
   });
 
-  // fetch categories & wallets
-  const { data: categories = [] } = useCategories(type);
-  const { data: wallets = [] } = useWallets();
-
   // fetch /addTransaction
-  const { mutateAsync, isError, isPending } = useAddTransaction();
+  const { mutateAsync } = useAddTransaction();
 
   // send tx
   const handleSave = async () => {
-    setAmount("0");
-    setNote("");
+    const parsedAmount = parseRupiah(amount);
+    if (!parsedAmount || parsedAmount <= 0) return;
+
     const newTransaction: addTransactionType = {
       walletId,
       categoryId,
-      amount: parseRupiah(amount),
+      amount: parsedAmount,
       type,
       note,
       date: date.toISOString(),
     };
-
-    console.log("Data Disimpan:", newTransaction);
-    // TODO: Panggil fungsi mutasi TanStack Query di sini
 
     await mutateAsync(newTransaction);
 
     setAmount("");
     setNote("");
     setSelectedAmount(null);
+
+    if (router.canGoBack()) {
+      router.back();
+    }
   };
 
   return (
@@ -204,7 +220,7 @@ export function useModalTransactionContext() {
   const context = useContext(TransactionContext);
   if (!context) {
     throw new Error(
-      "useModalTransactionContext harus digunakan di dalam ModalTransactionProvider",
+      "useModalTransactionContext harus digunakan di dalam ModalTransactionProvider"
     );
   }
   return context;

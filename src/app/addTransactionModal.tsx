@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import ToggleType from "@/components/addTransaction/ToggleType";
 import { useModalTransactionContext } from "@/context/ModalTransactionContext";
 import FormInput from "@/components/addTransaction/FormInput";
+import { Save } from "lucide-react-native";
 
 export default function AddTransactionModal() {
   const { theme, handleSave } = useModalTransactionContext();
@@ -62,10 +63,13 @@ export default function AddTransactionModal() {
 
           {/* Submit Button */}
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, { backgroundColor: theme.primary }]}
             onPress={() => handleSave()}
           >
-            <Text style={[styles.submitButtonText, { color: theme.textMuted }]}>
+            <Save size={18} />
+            <Text
+              style={[styles.submitButtonText, { color: theme.background }]}
+            >
               Simpan Transaksi
             </Text>
           </TouchableOpacity>
@@ -85,8 +89,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   submitButton: {
-    backgroundColor: "#4F46E5", // indigo-600
-    borderRadius: 10,
+    flexDirection: "row",
+    borderRadius: 999,
+    justifyContent: "center",
+    gap: 8,
     paddingVertical: 16,
     alignItems: "center",
     marginTop: 12,
