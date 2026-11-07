@@ -1,12 +1,21 @@
 import { db } from "@/db/client";
 import { monthFormatter } from "./plugin";
 import { budgets, categories, transactions, wallets } from "@/db/schema";
-import { and, eq, gte, lt, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, lt, notInArray, or, sql } from "drizzle-orm";
+import {
+  TRANSFER_IN_CATEGORY_NAME,
+  TRANSFER_OUT_CATEGORY_NAME,
+} from "@/services/wallets/wallets";
+
+const TRANSFER_CATEGORY_NAMES = [
+  TRANSFER_IN_CATEGORY_NAME,
+  TRANSFER_OUT_CATEGORY_NAME,
+];
 
 export const summary = async (date: string) => {
   const { start, end } = monthFormatter(date);
 
-  // monthly transaction
+  // monthly transaction (excluding internal wallet-to-wallet transfers)
   const monthlyTotals = await db
     .select({
       type: transactions.type,
@@ -16,7 +25,17 @@ export const summary = async (date: string) => {
       count: sql<number>`count(${transactions.id})`.mapWith(Number),
     })
     .from(transactions)
-    .where(and(gte(transactions.date, start), lt(transactions.date, end)))
+    .leftJoin(categories, eq(transactions.categoryId, categories.id))
+    .where(
+      and(
+        gte(transactions.date, start),
+        lt(transactions.date, end),
+        or(
+          isNull(categories.name),
+          notInArray(categories.name, TRANSFER_CATEGORY_NAMES)
+        )
+      )
+    )
     .groupBy(transactions.type);
 
   const expenseRow = monthlyTotals.find((item) => item.type === "expense");
@@ -75,6 +94,7 @@ export const byCategory = async (month: string) => {
   const datas = await db
     .select({
       id: categories.id,
+      budgetId: budgets.id,
       name: categories.name,
       color: categories.color,
       limit: budgets.limitAmount,
@@ -96,8 +116,13 @@ export const byCategory = async (month: string) => {
         lt(transactions.date, end)
       )
     )
-    .where(eq(categories.type, "expense"))
-    .groupBy(categories.id, budgets.limitAmount);
+    .where(
+      and(
+        eq(categories.type, "expense"),
+        notInArray(categories.name, TRANSFER_CATEGORY_NAMES)
+      )
+    )
+    .groupBy(categories.id, budgets.id, budgets.limitAmount);
 
   const items = datas.map((data) => {
     if (data.limit === null) {
@@ -151,10 +176,15 @@ export const monthlyTrends = async (year: number) => {
       ),
     })
     .from(transactions)
+    .leftJoin(categories, eq(transactions.categoryId, categories.id))
     .where(
       and(
         gte(transactions.date, `${year}-01-01`),
-        lt(transactions.date, `${year + 1}-01-01`)
+        lt(transactions.date, `${year + 1}-01-01`),
+        or(
+          isNull(categories.name),
+          notInArray(categories.name, TRANSFER_CATEGORY_NAMES)
+        )
       )
     )
     .groupBy(monthExpr, transactions.type)

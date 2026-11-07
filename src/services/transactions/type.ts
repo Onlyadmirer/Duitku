@@ -1,11 +1,11 @@
 export type addTransactionType = {
-  walletId: number
-  categoryId: number
-  amount: number
-  type: "income" | "expense"
-  note?: string
-  date: string
-}
+  walletId: number;
+  categoryId: number;
+  amount: number;
+  type: "income" | "expense";
+  note?: string;
+  date: string;
+};
 
 export type listTransactionType = {
   categoryId?: number | undefined;
@@ -16,12 +16,13 @@ export type listTransactionType = {
   to?: string | undefined;
   limit: number;
   page: number;
-}
+};
 
 export type updateTransactionType = {
+  type?: "income" | "expense" | undefined;
   date?: string | undefined;
   categoryId?: number | undefined;
   walletId?: number | undefined;
   amount?: number | undefined;
   note?: string | undefined;
-}
+};

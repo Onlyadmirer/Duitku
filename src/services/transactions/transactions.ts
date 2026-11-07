@@ -5,7 +5,7 @@ import {
   updateTransactionType,
 } from "./type";
 import { categories, transactions, wallets } from "@/db/schema";
-import { and, desc, eq, gte, like, lt, lte } from "drizzle-orm";
+import { and, desc, eq, gte, like, lt, lte, or } from "drizzle-orm";
 
 export const fetchTransactions = async (query: listTransactionType) => {
   const conditions = [];
@@ -20,15 +20,17 @@ export const fetchTransactions = async (query: listTransactionType) => {
     conditions.push(gte(transactions.date, query.from));
   }
   if (query.to) {
-    // Support exclusive upper bound if YYYY-MM-01 from monthFormatter, or inclusive
     conditions.push(
       query.to.endsWith("-01") && query.from?.endsWith("-01")
         ? lt(transactions.date, query.to)
         : lte(transactions.date, query.to)
     );
   }
-  if (query.search) {
-    conditions.push(like(transactions.note, `%${query.search}%`));
+  if (query.search && query.search.trim() !== "") {
+    const keyword = `%${query.search.trim()}%`;
+    conditions.push(
+      or(like(transactions.note, keyword), like(categories.name, keyword))
+    );
   }
   if (query.categoryId) {
     conditions.push(eq(transactions.categoryId, query.categoryId));
@@ -58,13 +60,17 @@ export const fetchTransactions = async (query: listTransactionType) => {
     .limit(query.limit)
     .offset((query.page - 1) * query.limit);
 
-  const totalPromise = db.$count(transactions, whereClause);
+  const countRowsPromise = db
+    .select({ id: transactions.id })
+    .from(transactions)
+    .leftJoin(categories, eq(transactions.categoryId, categories.id))
+    .where(whereClause);
 
-  const [items, total] = await Promise.all([promiseItem, totalPromise]);
+  const [items, countRows] = await Promise.all([promiseItem, countRowsPromise]);
 
   return {
     items,
-    total,
+    total: countRows.length,
     page: query.page,
     limit: query.limit,
   };

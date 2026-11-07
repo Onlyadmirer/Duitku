@@ -1,29 +1,35 @@
-import { db } from "@/db/client"
-import { categories } from "@/db/schema"
-import { categoryType, inputCategoryType, updateCategoryType } from "./type"
-import { eq } from "drizzle-orm"
+import { db } from "@/db/client";
+import { categories } from "@/db/schema";
+import { categoryType, inputCategoryType, updateCategoryType } from "./type";
+import { eq } from "drizzle-orm";
 
 export const addCategory = async (data: inputCategoryType) => {
-  return await db.insert(categories).values(data).returning()
-}
+  return await db.insert(categories).values(data).returning();
+};
 
-
-export const listCategories = async (type: categoryType) => {
-  return await db.select().from(categories).where(
-    type ? eq(categories.type, type) : undefined
-  )
-}
+export const listCategories = async (type?: categoryType) => {
+  return await db
+    .select()
+    .from(categories)
+    .where(type ? eq(categories.type, type) : undefined);
+};
 
 export const getOneCategory = async (id: number) => {
-  const [category] = await db.select().from(categories).where(eq(categories.id, id))
+  const [category] = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.id, id));
 
-  return category
-}
+  return category;
+};
 
 export const updateCategory = async (id: number, data: updateCategoryType) => {
-  return await db.update(categories).set(data).where(eq(categories.id, id))
-}
+  return await db
+    .update(categories)
+    .set(data)
+    .where(eq(categories.id, id));
+};
 
 export const removeCategory = async (id: number) => {
-  await db.delete(categories).where(eq(categories.id, id))
-}
+  await db.delete(categories).where(eq(categories.id, id));
+};

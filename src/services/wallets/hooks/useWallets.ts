@@ -3,10 +3,17 @@ import {
   createWallet,
   listWallets,
   removeWallet,
+  transferWalletFunds,
   updateWallet,
 } from "../wallets";
-import { createWalletType, updateWalletType } from "../type";
+import {
+  createWalletType,
+  transferWalletType,
+  updateWalletType,
+} from "../type";
 import { reportKeys } from "@/services/reports/hooks/useReports";
+import { transactionKeys } from "@/services/transactions/hooks/useTransactions";
+import { categoryKeys } from "@/services/categories/hooks/useCategories";
 
 export const walletKeys = {
   all: ["wallets"] as const,
@@ -53,6 +60,19 @@ export function useRemovewallet() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: walletKeys.all });
       queryClient.invalidateQueries({ queryKey: reportKeys.all });
+    },
+  });
+}
+
+export function useTransferWallet() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: transferWalletType) => transferWalletFunds(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: walletKeys.all });
+      queryClient.invalidateQueries({ queryKey: reportKeys.all });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.all });
+      queryClient.invalidateQueries({ queryKey: categoryKeys.all });
     },
   });
 }
